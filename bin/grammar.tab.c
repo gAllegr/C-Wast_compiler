@@ -72,16 +72,13 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <string.h>
-	/* files and functions */
-	extern FILE *yyout;
-	extern int lineno;
-    extern int yylex();
-    extern void yyerror(const char *);
+	#include "../src/utils.h"
 
+	int yylex();
     /* Variable needed for debugging */
 	//int yydebug = 1;
 
-#line 85 "grammar.tab.c" /* yacc.c:339  */
+#line 82 "grammar.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -173,7 +170,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 177 "grammar.tab.c" /* yacc.c:358  */
+#line 174 "grammar.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -474,16 +471,16 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    57,    57,    58,    63,    64,    69,    70,    75,    76,
-      77,    81,    83,    88,    93,    94,    95,    96,    97,   102,
-     103,   108,   112,   114,   115,   120,   121,   126,   131,   132,
-     137,   138,   144,   145,   146,   147,   148,   149,   150,   151,
-     152,   157,   158,   163,   165,   166,   180,   181,   182,   188,
-     189,   190,   191,   192,   193,   194,   195,   196,   197,   198,
-     199,   200,   201,   206,   211,   212,   217,   218,   223,   228,
-     229,   237,   238,   243,   244,   251,   257,   259,   260,   266,
-     267,   272,   273,   274,   281,   282,   283,   284,   285,   293,
-     294,   295,   296,   301,   302,   303,   308,   309,   314,   315
+       0,    54,    54,    55,    60,    61,    66,    67,    72,    73,
+      74,    78,    80,    85,    90,    91,    92,    93,    94,    99,
+     100,   105,   109,   111,   112,   117,   118,   123,   128,   129,
+     134,   135,   141,   142,   143,   144,   145,   146,   147,   148,
+     149,   154,   155,   160,   162,   163,   177,   178,   179,   185,
+     186,   187,   188,   189,   190,   191,   192,   193,   194,   195,
+     196,   197,   198,   203,   208,   209,   214,   215,   220,   225,
+     226,   234,   235,   240,   241,   248,   254,   256,   257,   263,
+     264,   269,   270,   271,   278,   279,   280,   281,   282,   290,
+     291,   292,   293,   298,   299,   300,   305,   306,   311,   312
 };
 #endif
 
@@ -1404,20 +1401,14 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-        case 2:
-#line 57 "./src/grammar.y" /* yacc.c:1646  */
-    {printf("\n==PARSER==\n%s\n",(yyval));}
-#line 1411 "grammar.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 3:
-#line 58 "./src/grammar.y" /* yacc.c:1646  */
-    {printf("\n==PARSER==\n%s\n",(yyval));}
-#line 1417 "grammar.tab.c" /* yacc.c:1646  */
+        case 6:
+#line 66 "./src/grammar.y" /* yacc.c:1646  */
+    {(yyval) = concat(3,(yyvsp[-2]),(yyvsp[-1]),(yyvsp[0])); printf("|%s|",(yyval));}
+#line 1408 "grammar.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1421 "grammar.tab.c" /* yacc.c:1646  */
+#line 1412 "grammar.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1645,21 +1636,5 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 318 "./src/grammar.y" /* yacc.c:1906  */
+#line 315 "./src/grammar.y" /* yacc.c:1906  */
 
-
-int main (void) {
-	// initialize symbol table
-//	init_hash_table();
-
-	int result = yyparse();
-	if(result==0) printf("\nCORRECT SYNTAX!\n");
-	else printf("\nWRONG SYNTAX!\n");
-
-	// symbol table dump
-/*	yyout = fopen("symtab_dump.out w");
-	symtab_dump(yyout);
-	fclose(yyout);	
-*/
-    return result;
-}

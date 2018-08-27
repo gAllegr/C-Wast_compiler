@@ -7,12 +7,9 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <string.h>
-	/* files and functions */
-	extern FILE *yyout;
-	extern int lineno;
-    extern int yylex();
-    extern void yyerror(const char *);
+	#include "../src/utils.h"
 
+	int yylex();
     /* Variable needed for debugging */
 	//int yydebug = 1;
 %}
@@ -54,8 +51,8 @@
 /* Stream identifies the whole C program submitted for compilation
 C language is a procedural language, it only allows declarations and functions */
 program
-    : functions                     {printf("\n==PARSER==\n%s\n",$$);}
-    | declarations functions        {printf("\n==PARSER==\n%s\n",$$);}
+    : functions     
+    | declarations functions
     ;
 
 /* Recursion allows sequences of declarations */
@@ -66,7 +63,7 @@ declarations
 
 /* Variable declaration or struct declaration */
 declaration
-    : var_type var_decl SEMICOLON
+    : var_type var_decl SEMICOLON	{$$ = concat(3,$1,$2,$3); printf("|%s|",$$);}
     | struct_declaration SEMICOLON
     ;
 
@@ -316,19 +313,3 @@ number
     ;
 
 %%
-
-int main (void) {
-	// initialize symbol table
-//	init_hash_table();
-
-	int result = yyparse();
-	if(result==0) printf("\nCORRECT SYNTAX!\n");
-	else printf("\nWRONG SYNTAX!\n");
-
-	// symbol table dump
-/*	yyout = fopen("symtab_dump.out w");
-	symtab_dump(yyout);
-	fclose(yyout);	
-*/
-    return result;
-}
