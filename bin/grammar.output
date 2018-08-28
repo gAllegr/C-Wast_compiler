@@ -1,4 +1,4 @@
-State 161 conflicts: 1 shift/reduce
+State 162 conflicts: 1 shift/reduce
 
 
 Grammar
@@ -74,7 +74,7 @@ Grammar
    49     | expr SUB expr
    50     | expr TIMES expr
    51     | expr DIVIDE expr
-   52     | SUB
+   52     | SUB expr
    53     | increment
    54     | expr EQOP expr
    55     | expr RELOP expr
@@ -225,7 +225,7 @@ assignment (59)
     on left: 45 46 47, on right: 8 33 76
 expr (60)
     on left: 48 49 50 51 52 53 54 55 56 57 58 59 60 61, on right: 46
-    48 49 50 51 54 55 56 57 58 59 70 71 74 78
+    48 49 50 51 52 54 55 56 57 58 59 70 71 74 78
 increment (61)
     on left: 62, on right: 34 53
 printf_stat (62)
@@ -735,7 +735,7 @@ State 34
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -962,7 +962,7 @@ State 48
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -996,9 +996,40 @@ State 48
 
 State 49
 
-   52 expr: SUB .
+   48 expr: . expr ADD expr
+   49     | . expr SUB expr
+   50     | . expr TIMES expr
+   51     | . expr DIVIDE expr
+   52     | . SUB expr
+   52     | SUB . expr
+   53     | . increment
+   54     | . expr EQOP expr
+   55     | . expr RELOP expr
+   56     | . expr AND expr
+   57     | . expr OR expr
+   58     | . NOT expr
+   59     | . O_ROUND_BRACES expr C_ROUND_BRACES
+   60     | . number
+   61     | . identifier
+   62 increment: . identifier INCR
+   88 identifier: . IDENTIFIER
+   89           | . identifier O_SQUARE_BRACES ICONST C_SQUARE_BRACES
+   90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
+   91           | . identifier DOT identifier
+   97 number: . ICONST
+   98       | . FCONST
 
-    $default  reduce using rule 52 (expr)
+    O_ROUND_BRACES  shift, and go to state 48
+    SUB             shift, and go to state 49
+    NOT             shift, and go to state 50
+    IDENTIFIER      shift, and go to state 13
+    ICONST          shift, and go to state 51
+    FCONST          shift, and go to state 52
+
+    expr        go to state 75
+    increment   go to state 56
+    identifier  go to state 57
+    number      go to state 59
 
 
 State 50
@@ -1007,7 +1038,7 @@ State 50
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -1033,7 +1064,7 @@ State 50
     ICONST          shift, and go to state 51
     FCONST          shift, and go to state 52
 
-    expr        go to state 75
+    expr        go to state 76
     increment   go to state 56
     identifier  go to state 57
     number      go to state 59
@@ -1079,14 +1110,14 @@ State 55
    56     | expr . AND expr
    57     | expr . OR expr
 
-    ADD     shift, and go to state 76
-    SUB     shift, and go to state 77
-    TIMES   shift, and go to state 78
-    DIVIDE  shift, and go to state 79
-    EQOP    shift, and go to state 80
-    RELOP   shift, and go to state 81
-    AND     shift, and go to state 82
-    OR      shift, and go to state 83
+    ADD     shift, and go to state 77
+    SUB     shift, and go to state 78
+    TIMES   shift, and go to state 79
+    DIVIDE  shift, and go to state 80
+    EQOP    shift, and go to state 81
+    RELOP   shift, and go to state 82
+    AND     shift, and go to state 83
+    OR      shift, and go to state 84
 
     $default  reduce using rule 46 (assignment)
 
@@ -1108,7 +1139,7 @@ State 57
 
     O_SQUARE_BRACES  shift, and go to state 27
     DOT              shift, and go to state 28
-    INCR             shift, and go to state 84
+    INCR             shift, and go to state 85
 
     $default  reduce using rule 61 (expr)
 
@@ -1147,7 +1178,7 @@ State 60
 
     $default  reduce using rule 10 (simple_declaration)
 
-    var_decl            go to state 85
+    var_decl            go to state 86
     simple_declaration  go to state 23
     assignment          go to state 24
     identifier          go to state 41
@@ -1171,7 +1202,7 @@ State 63
 
    20 func_definition: var_type identifier O_ROUND_BRACES argument_list C_ROUND_BRACES . O_CURLY_BRACES body C_CURLY_BRACES
 
-    O_CURLY_BRACES  shift, and go to state 86
+    O_CURLY_BRACES  shift, and go to state 87
 
 
 State 64
@@ -1190,7 +1221,7 @@ State 64
     CHAR    shift, and go to state 4
     STRUCT  shift, and go to state 19
 
-    parameter_declaration  go to state 87
+    parameter_declaration  go to state 88
     var_type               go to state 46
 
 
@@ -1230,7 +1261,7 @@ State 66
     CCONST          shift, and go to state 69
     STRCONST        shift, and go to state 70
 
-    inizialization_list  go to state 88
+    inizialization_list  go to state 89
     identifier           go to state 72
     const                go to state 73
 
@@ -1268,8 +1299,8 @@ State 71
    17 inizialization_list: inizialization_list . COMMA inizialization_list
    47 assignment: identifier ASSIGN O_CURLY_BRACES inizialization_list . C_CURLY_BRACES
 
-    C_CURLY_BRACES  shift, and go to state 89
-    COMMA           shift, and go to state 90
+    C_CURLY_BRACES  shift, and go to state 90
+    COMMA           shift, and go to state 91
 
 
 State 72
@@ -1304,18 +1335,42 @@ State 74
    57     | expr . OR expr
    59     | O_ROUND_BRACES expr . C_ROUND_BRACES
 
-    C_ROUND_BRACES  shift, and go to state 91
-    ADD             shift, and go to state 76
-    SUB             shift, and go to state 77
-    TIMES           shift, and go to state 78
-    DIVIDE          shift, and go to state 79
-    EQOP            shift, and go to state 80
-    RELOP           shift, and go to state 81
-    AND             shift, and go to state 82
-    OR              shift, and go to state 83
+    C_ROUND_BRACES  shift, and go to state 92
+    ADD             shift, and go to state 77
+    SUB             shift, and go to state 78
+    TIMES           shift, and go to state 79
+    DIVIDE          shift, and go to state 80
+    EQOP            shift, and go to state 81
+    RELOP           shift, and go to state 82
+    AND             shift, and go to state 83
+    OR              shift, and go to state 84
 
 
 State 75
+
+   48 expr: expr . ADD expr
+   49     | expr . SUB expr
+   50     | expr . TIMES expr
+   51     | expr . DIVIDE expr
+   52     | SUB expr .  [C_ROUND_BRACES, COMMA, SEMICOLON, ADD, SUB, TIMES, DIVIDE, EQOP, RELOP, AND, OR]
+   54     | expr . EQOP expr
+   55     | expr . RELOP expr
+   56     | expr . AND expr
+   57     | expr . OR expr
+
+    $default  reduce using rule 52 (expr)
+
+    Conflict between rule 52 and token ADD resolved as reduce (ADD < REV).
+    Conflict between rule 52 and token SUB resolved as reduce (SUB < REV).
+    Conflict between rule 52 and token TIMES resolved as reduce (TIMES < REV).
+    Conflict between rule 52 and token DIVIDE resolved as reduce (DIVIDE < REV).
+    Conflict between rule 52 and token EQOP resolved as reduce (EQOP < REV).
+    Conflict between rule 52 and token RELOP resolved as reduce (RELOP < REV).
+    Conflict between rule 52 and token AND resolved as reduce (AND < REV).
+    Conflict between rule 52 and token OR resolved as reduce (OR < REV).
+
+
+State 76
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -1339,52 +1394,14 @@ State 75
     Conflict between rule 58 and token OR resolved as reduce (OR < NOT).
 
 
-State 76
+State 77
 
    48 expr: . expr ADD expr
    48     | expr ADD . expr
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
-   53     | . increment
-   54     | . expr EQOP expr
-   55     | . expr RELOP expr
-   56     | . expr AND expr
-   57     | . expr OR expr
-   58     | . NOT expr
-   59     | . O_ROUND_BRACES expr C_ROUND_BRACES
-   60     | . number
-   61     | . identifier
-   62 increment: . identifier INCR
-   88 identifier: . IDENTIFIER
-   89           | . identifier O_SQUARE_BRACES ICONST C_SQUARE_BRACES
-   90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
-   91           | . identifier DOT identifier
-   97 number: . ICONST
-   98       | . FCONST
-
-    O_ROUND_BRACES  shift, and go to state 48
-    SUB             shift, and go to state 49
-    NOT             shift, and go to state 50
-    IDENTIFIER      shift, and go to state 13
-    ICONST          shift, and go to state 51
-    FCONST          shift, and go to state 52
-
-    expr        go to state 92
-    increment   go to state 56
-    identifier  go to state 57
-    number      go to state 59
-
-
-State 77
-
-   48 expr: . expr ADD expr
-   49     | . expr SUB expr
-   49     | expr SUB . expr
-   50     | . expr TIMES expr
-   51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -1419,10 +1436,10 @@ State 78
 
    48 expr: . expr ADD expr
    49     | . expr SUB expr
+   49     | expr SUB . expr
    50     | . expr TIMES expr
-   50     | expr TIMES . expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -1458,9 +1475,9 @@ State 79
    48 expr: . expr ADD expr
    49     | . expr SUB expr
    50     | . expr TIMES expr
+   50     | expr TIMES . expr
    51     | . expr DIVIDE expr
-   51     | expr DIVIDE . expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -1497,10 +1514,10 @@ State 80
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   51     | expr DIVIDE . expr
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
-   54     | expr EQOP . expr
    55     | . expr RELOP expr
    56     | . expr AND expr
    57     | . expr OR expr
@@ -1535,11 +1552,11 @@ State 81
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
+   54     | expr EQOP . expr
    55     | . expr RELOP expr
-   55     | expr RELOP . expr
    56     | . expr AND expr
    57     | . expr OR expr
    58     | . NOT expr
@@ -1573,12 +1590,12 @@ State 82
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
+   55     | expr RELOP . expr
    56     | . expr AND expr
-   56     | expr AND . expr
    57     | . expr OR expr
    58     | . NOT expr
    59     | . O_ROUND_BRACES expr C_ROUND_BRACES
@@ -1611,13 +1628,13 @@ State 83
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
    56     | . expr AND expr
+   56     | expr AND . expr
    57     | . expr OR expr
-   57     | expr OR . expr
    58     | . NOT expr
    59     | . O_ROUND_BRACES expr C_ROUND_BRACES
    60     | . number
@@ -1645,12 +1662,50 @@ State 83
 
 State 84
 
+   48 expr: . expr ADD expr
+   49     | . expr SUB expr
+   50     | . expr TIMES expr
+   51     | . expr DIVIDE expr
+   52     | . SUB expr
+   53     | . increment
+   54     | . expr EQOP expr
+   55     | . expr RELOP expr
+   56     | . expr AND expr
+   57     | . expr OR expr
+   57     | expr OR . expr
+   58     | . NOT expr
+   59     | . O_ROUND_BRACES expr C_ROUND_BRACES
+   60     | . number
+   61     | . identifier
+   62 increment: . identifier INCR
+   88 identifier: . IDENTIFIER
+   89           | . identifier O_SQUARE_BRACES ICONST C_SQUARE_BRACES
+   90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
+   91           | . identifier DOT identifier
+   97 number: . ICONST
+   98       | . FCONST
+
+    O_ROUND_BRACES  shift, and go to state 48
+    SUB             shift, and go to state 49
+    NOT             shift, and go to state 50
+    IDENTIFIER      shift, and go to state 13
+    ICONST          shift, and go to state 51
+    FCONST          shift, and go to state 52
+
+    expr        go to state 100
+    increment   go to state 56
+    identifier  go to state 57
+    number      go to state 59
+
+
+State 85
+
    62 increment: identifier INCR .
 
     $default  reduce using rule 62 (increment)
 
 
-State 85
+State 86
 
     9 var_decl: var_decl . COMMA var_decl
    12 struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES var_decl .  [SEMICOLON]
@@ -1660,7 +1715,7 @@ State 85
     $default  reduce using rule 12 (struct_declaration)
 
 
-State 86
+State 87
 
     3 declarations: . declaration
     4             | . declarations declaration
@@ -1706,60 +1761,60 @@ State 86
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    SEMICOLON   shift, and go to state 100
-    IF          shift, and go to state 101
-    FOR         shift, and go to state 102
-    PRINTF      shift, and go to state 103
-    SCANF       shift, and go to state 104
+    SEMICOLON   shift, and go to state 101
+    IF          shift, and go to state 102
+    FOR         shift, and go to state 103
+    PRINTF      shift, and go to state 104
+    SCANF       shift, and go to state 105
     IDENTIFIER  shift, and go to state 13
-    RETURN      shift, and go to state 105
+    RETURN      shift, and go to state 106
     VOID        shift, and go to state 1
     INT         shift, and go to state 2
     FLOAT       shift, and go to state 3
     CHAR        shift, and go to state 4
     STRUCT      shift, and go to state 5
 
-    declarations        go to state 106
+    declarations        go to state 107
     declaration         go to state 8
     struct_declaration  go to state 9
-    body                go to state 107
-    statements          go to state 108
-    statement           go to state 109
-    func_call           go to state 110
-    assignment          go to state 111
-    increment           go to state 112
-    printf_stat         go to state 113
-    scanf_stat          go to state 114
-    if_stat             go to state 115
-    for_stat            go to state 116
-    return_stat         go to state 117
+    body                go to state 108
+    statements          go to state 109
+    statement           go to state 110
+    func_call           go to state 111
+    assignment          go to state 112
+    increment           go to state 113
+    printf_stat         go to state 114
+    scanf_stat          go to state 115
+    if_stat             go to state 116
+    for_stat            go to state 117
+    return_stat         go to state 118
     var_type            go to state 36
-    identifier          go to state 118
+    identifier          go to state 119
 
 
-State 87
+State 88
 
    25 parameter_list: parameter_list COMMA parameter_declaration .
 
     $default  reduce using rule 25 (parameter_list)
 
 
-State 88
+State 89
 
    16 inizialization_list: O_CURLY_BRACES inizialization_list . COMMA inizialization_list C_CURLY_BRACES
    17                    | inizialization_list . COMMA inizialization_list
 
-    COMMA  shift, and go to state 119
+    COMMA  shift, and go to state 120
 
 
-State 89
+State 90
 
    47 assignment: identifier ASSIGN O_CURLY_BRACES inizialization_list C_CURLY_BRACES .
 
     $default  reduce using rule 47 (assignment)
 
 
-State 90
+State 91
 
    13 inizialization_list: . identifier
    14                    | . const
@@ -1782,19 +1837,19 @@ State 90
     CCONST          shift, and go to state 69
     STRCONST        shift, and go to state 70
 
-    inizialization_list  go to state 120
+    inizialization_list  go to state 121
     identifier           go to state 72
     const                go to state 73
 
 
-State 91
+State 92
 
    59 expr: O_ROUND_BRACES expr C_ROUND_BRACES .
 
     $default  reduce using rule 59 (expr)
 
 
-State 92
+State 93
 
    48 expr: expr . ADD expr
    48     | expr ADD expr .  [C_ROUND_BRACES, COMMA, SEMICOLON, ADD, SUB, EQOP, RELOP, AND, OR]
@@ -1806,8 +1861,8 @@ State 92
    56     | expr . AND expr
    57     | expr . OR expr
 
-    TIMES   shift, and go to state 78
-    DIVIDE  shift, and go to state 79
+    TIMES   shift, and go to state 79
+    DIVIDE  shift, and go to state 80
 
     $default  reduce using rule 48 (expr)
 
@@ -1821,7 +1876,7 @@ State 92
     Conflict between rule 48 and token OR resolved as reduce (OR < ADD).
 
 
-State 93
+State 94
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -1833,8 +1888,8 @@ State 93
    56     | expr . AND expr
    57     | expr . OR expr
 
-    TIMES   shift, and go to state 78
-    DIVIDE  shift, and go to state 79
+    TIMES   shift, and go to state 79
+    DIVIDE  shift, and go to state 80
 
     $default  reduce using rule 49 (expr)
 
@@ -1848,7 +1903,7 @@ State 93
     Conflict between rule 49 and token OR resolved as reduce (OR < SUB).
 
 
-State 94
+State 95
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -1872,7 +1927,7 @@ State 94
     Conflict between rule 50 and token OR resolved as reduce (OR < TIMES).
 
 
-State 95
+State 96
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -1896,7 +1951,7 @@ State 95
     Conflict between rule 51 and token OR resolved as reduce (OR < DIVIDE).
 
 
-State 96
+State 97
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -1908,11 +1963,11 @@ State 96
    56     | expr . AND expr
    57     | expr . OR expr
 
-    ADD     shift, and go to state 76
-    SUB     shift, and go to state 77
-    TIMES   shift, and go to state 78
-    DIVIDE  shift, and go to state 79
-    RELOP   shift, and go to state 81
+    ADD     shift, and go to state 77
+    SUB     shift, and go to state 78
+    TIMES   shift, and go to state 79
+    DIVIDE  shift, and go to state 80
+    RELOP   shift, and go to state 82
 
     $default  reduce using rule 54 (expr)
 
@@ -1926,7 +1981,7 @@ State 96
     Conflict between rule 54 and token OR resolved as reduce (OR < EQOP).
 
 
-State 97
+State 98
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -1938,10 +1993,10 @@ State 97
    56     | expr . AND expr
    57     | expr . OR expr
 
-    ADD     shift, and go to state 76
-    SUB     shift, and go to state 77
-    TIMES   shift, and go to state 78
-    DIVIDE  shift, and go to state 79
+    ADD     shift, and go to state 77
+    SUB     shift, and go to state 78
+    TIMES   shift, and go to state 79
+    DIVIDE  shift, and go to state 80
 
     $default  reduce using rule 55 (expr)
 
@@ -1955,7 +2010,7 @@ State 97
     Conflict between rule 55 and token OR resolved as reduce (OR < RELOP).
 
 
-State 98
+State 99
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -1967,12 +2022,12 @@ State 98
    56     | expr AND expr .  [C_ROUND_BRACES, COMMA, SEMICOLON, AND, OR]
    57     | expr . OR expr
 
-    ADD     shift, and go to state 76
-    SUB     shift, and go to state 77
-    TIMES   shift, and go to state 78
-    DIVIDE  shift, and go to state 79
-    EQOP    shift, and go to state 80
-    RELOP   shift, and go to state 81
+    ADD     shift, and go to state 77
+    SUB     shift, and go to state 78
+    TIMES   shift, and go to state 79
+    DIVIDE  shift, and go to state 80
+    EQOP    shift, and go to state 81
+    RELOP   shift, and go to state 82
 
     $default  reduce using rule 56 (expr)
 
@@ -1986,7 +2041,7 @@ State 98
     Conflict between rule 56 and token OR resolved as reduce (OR < AND).
 
 
-State 99
+State 100
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -1998,13 +2053,13 @@ State 99
    57     | expr . OR expr
    57     | expr OR expr .  [C_ROUND_BRACES, COMMA, SEMICOLON, OR]
 
-    ADD     shift, and go to state 76
-    SUB     shift, and go to state 77
-    TIMES   shift, and go to state 78
-    DIVIDE  shift, and go to state 79
-    EQOP    shift, and go to state 80
-    RELOP   shift, and go to state 81
-    AND     shift, and go to state 82
+    ADD     shift, and go to state 77
+    SUB     shift, and go to state 78
+    TIMES   shift, and go to state 79
+    DIVIDE  shift, and go to state 80
+    EQOP    shift, and go to state 81
+    RELOP   shift, and go to state 82
+    AND     shift, and go to state 83
 
     $default  reduce using rule 57 (expr)
 
@@ -2018,44 +2073,44 @@ State 99
     Conflict between rule 57 and token OR resolved as reduce (%left OR).
 
 
-State 100
+State 101
 
    31 statement: SEMICOLON .
 
     $default  reduce using rule 31 (statement)
 
 
-State 101
+State 102
 
    70 if_stat: IF . O_ROUND_BRACES expr C_ROUND_BRACES block
    71        | IF . O_ROUND_BRACES expr C_ROUND_BRACES block ELSE block
-
-    O_ROUND_BRACES  shift, and go to state 121
-
-
-State 102
-
-   74 for_stat: FOR . O_ROUND_BRACES init_for SEMICOLON expr SEMICOLON incr_for C_ROUND_BRACES block
 
     O_ROUND_BRACES  shift, and go to state 122
 
 
 State 103
 
-   63 printf_stat: PRINTF . O_ROUND_BRACES word C_ROUND_BRACES
-   64            | PRINTF . O_ROUND_BRACES STRCONST COMMA printed_var C_ROUND_BRACES
+   74 for_stat: FOR . O_ROUND_BRACES init_for SEMICOLON expr SEMICOLON incr_for C_ROUND_BRACES block
 
     O_ROUND_BRACES  shift, and go to state 123
 
 
 State 104
 
-   67 scanf_stat: SCANF . O_ROUND_BRACES STRCONST COMMA retrieved_var C_ROUND_BRACES
+   63 printf_stat: PRINTF . O_ROUND_BRACES word C_ROUND_BRACES
+   64            | PRINTF . O_ROUND_BRACES STRCONST COMMA printed_var C_ROUND_BRACES
 
     O_ROUND_BRACES  shift, and go to state 124
 
 
 State 105
+
+   67 scanf_stat: SCANF . O_ROUND_BRACES STRCONST COMMA retrieved_var C_ROUND_BRACES
+
+    O_ROUND_BRACES  shift, and go to state 125
+
+
+State 106
 
    80 return_stat: RETURN .  [SEMICOLON]
    81            | RETURN . const
@@ -2075,11 +2130,11 @@ State 105
 
     $default  reduce using rule 80 (return_stat)
 
-    identifier  go to state 125
-    const       go to state 126
+    identifier  go to state 126
+    const       go to state 127
 
 
-State 106
+State 107
 
     4 declarations: declarations . declaration
     5 declaration: . var_type var_decl SEMICOLON
@@ -2122,13 +2177,13 @@ State 106
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    SEMICOLON   shift, and go to state 100
-    IF          shift, and go to state 101
-    FOR         shift, and go to state 102
-    PRINTF      shift, and go to state 103
-    SCANF       shift, and go to state 104
+    SEMICOLON   shift, and go to state 101
+    IF          shift, and go to state 102
+    FOR         shift, and go to state 103
+    PRINTF      shift, and go to state 104
+    SCANF       shift, and go to state 105
     IDENTIFIER  shift, and go to state 13
-    RETURN      shift, and go to state 105
+    RETURN      shift, and go to state 106
     VOID        shift, and go to state 1
     INT         shift, and go to state 2
     FLOAT       shift, and go to state 3
@@ -2137,28 +2192,28 @@ State 106
 
     declaration         go to state 16
     struct_declaration  go to state 9
-    statements          go to state 127
-    statement           go to state 109
-    func_call           go to state 110
-    assignment          go to state 111
-    increment           go to state 112
-    printf_stat         go to state 113
-    scanf_stat          go to state 114
-    if_stat             go to state 115
-    for_stat            go to state 116
-    return_stat         go to state 117
+    statements          go to state 128
+    statement           go to state 110
+    func_call           go to state 111
+    assignment          go to state 112
+    increment           go to state 113
+    printf_stat         go to state 114
+    scanf_stat          go to state 115
+    if_stat             go to state 116
+    for_stat            go to state 117
+    return_stat         go to state 118
     var_type            go to state 36
-    identifier          go to state 118
-
-
-State 107
-
-   20 func_definition: var_type identifier O_ROUND_BRACES argument_list C_ROUND_BRACES O_CURLY_BRACES body . C_CURLY_BRACES
-
-    C_CURLY_BRACES  shift, and go to state 128
+    identifier          go to state 119
 
 
 State 108
+
+   20 func_definition: var_type identifier O_ROUND_BRACES argument_list C_ROUND_BRACES O_CURLY_BRACES body . C_CURLY_BRACES
+
+    C_CURLY_BRACES  shift, and go to state 129
+
+
+State 109
 
    27 body: statements .  [C_CURLY_BRACES]
    30 statements: statements . statement
@@ -2191,92 +2246,92 @@ State 108
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    SEMICOLON   shift, and go to state 100
-    IF          shift, and go to state 101
-    FOR         shift, and go to state 102
-    PRINTF      shift, and go to state 103
-    SCANF       shift, and go to state 104
+    SEMICOLON   shift, and go to state 101
+    IF          shift, and go to state 102
+    FOR         shift, and go to state 103
+    PRINTF      shift, and go to state 104
+    SCANF       shift, and go to state 105
     IDENTIFIER  shift, and go to state 13
-    RETURN      shift, and go to state 105
+    RETURN      shift, and go to state 106
 
     $default  reduce using rule 27 (body)
 
-    statement    go to state 129
-    func_call    go to state 110
-    assignment   go to state 111
-    increment    go to state 112
-    printf_stat  go to state 113
-    scanf_stat   go to state 114
-    if_stat      go to state 115
-    for_stat     go to state 116
-    return_stat  go to state 117
-    identifier   go to state 118
+    statement    go to state 130
+    func_call    go to state 111
+    assignment   go to state 112
+    increment    go to state 113
+    printf_stat  go to state 114
+    scanf_stat   go to state 115
+    if_stat      go to state 116
+    for_stat     go to state 117
+    return_stat  go to state 118
+    identifier   go to state 119
 
 
-State 109
+State 110
 
    29 statements: statement .
 
     $default  reduce using rule 29 (statements)
 
 
-State 110
-
-   32 statement: func_call . SEMICOLON
-
-    SEMICOLON  shift, and go to state 130
-
-
 State 111
 
-   33 statement: assignment . SEMICOLON
+   32 statement: func_call . SEMICOLON
 
     SEMICOLON  shift, and go to state 131
 
 
 State 112
 
-   34 statement: increment . SEMICOLON
+   33 statement: assignment . SEMICOLON
 
     SEMICOLON  shift, and go to state 132
 
 
 State 113
 
-   35 statement: printf_stat . SEMICOLON
+   34 statement: increment . SEMICOLON
 
     SEMICOLON  shift, and go to state 133
 
 
 State 114
 
-   36 statement: scanf_stat . SEMICOLON
+   35 statement: printf_stat . SEMICOLON
 
     SEMICOLON  shift, and go to state 134
 
 
 State 115
 
+   36 statement: scanf_stat . SEMICOLON
+
+    SEMICOLON  shift, and go to state 135
+
+
+State 116
+
    37 statement: if_stat .
 
     $default  reduce using rule 37 (statement)
 
 
-State 116
+State 117
 
    38 statement: for_stat .
 
     $default  reduce using rule 38 (statement)
 
 
-State 117
+State 118
 
    39 statement: return_stat . SEMICOLON
 
-    SEMICOLON  shift, and go to state 135
+    SEMICOLON  shift, and go to state 136
 
 
-State 118
+State 119
 
    40 func_call: identifier . O_ROUND_BRACES call_args C_ROUND_BRACES
    41          | identifier . ASSIGN identifier O_ROUND_BRACES call_args C_ROUND_BRACES
@@ -2289,13 +2344,13 @@ State 118
    91           | identifier . DOT identifier
 
     O_SQUARE_BRACES  shift, and go to state 27
-    O_ROUND_BRACES   shift, and go to state 136
+    O_ROUND_BRACES   shift, and go to state 137
     DOT              shift, and go to state 28
-    ASSIGN           shift, and go to state 137
-    INCR             shift, and go to state 84
+    ASSIGN           shift, and go to state 138
+    INCR             shift, and go to state 85
 
 
-State 119
+State 120
 
    13 inizialization_list: . identifier
    14                    | . const
@@ -2319,12 +2374,12 @@ State 119
     CCONST          shift, and go to state 69
     STRCONST        shift, and go to state 70
 
-    inizialization_list  go to state 138
+    inizialization_list  go to state 139
     identifier           go to state 72
     const                go to state 73
 
 
-State 120
+State 121
 
    17 inizialization_list: inizialization_list . COMMA inizialization_list
    17                    | inizialization_list COMMA inizialization_list .  [C_CURLY_BRACES, COMMA]
@@ -2334,13 +2389,13 @@ State 120
     Conflict between rule 17 and token COMMA resolved as reduce (%left COMMA).
 
 
-State 121
+State 122
 
    48 expr: . expr ADD expr
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -2367,13 +2422,13 @@ State 121
     ICONST          shift, and go to state 51
     FCONST          shift, and go to state 52
 
-    expr        go to state 139
+    expr        go to state 140
     increment   go to state 56
     identifier  go to state 57
     number      go to state 59
 
 
-State 122
+State 123
 
    45 assignment: . identifier ASSIGN word
    46           | . identifier ASSIGN expr
@@ -2391,12 +2446,12 @@ State 122
 
     $default  reduce using rule 75 (init_for)
 
-    assignment  go to state 140
-    init_for    go to state 141
-    identifier  go to state 142
+    assignment  go to state 141
+    init_for    go to state 142
+    identifier  go to state 143
 
 
-State 123
+State 124
 
    63 printf_stat: PRINTF O_ROUND_BRACES . word C_ROUND_BRACES
    64            | PRINTF O_ROUND_BRACES . STRCONST COMMA printed_var C_ROUND_BRACES
@@ -2404,19 +2459,19 @@ State 123
    96     | . STRCONST
 
     CCONST    shift, and go to state 53
-    STRCONST  shift, and go to state 143
+    STRCONST  shift, and go to state 144
 
-    word  go to state 144
-
-
-State 124
-
-   67 scanf_stat: SCANF O_ROUND_BRACES . STRCONST COMMA retrieved_var C_ROUND_BRACES
-
-    STRCONST  shift, and go to state 145
+    word  go to state 145
 
 
 State 125
+
+   67 scanf_stat: SCANF O_ROUND_BRACES . STRCONST COMMA retrieved_var C_ROUND_BRACES
+
+    STRCONST  shift, and go to state 146
+
+
+State 126
 
    82 return_stat: RETURN identifier .  [SEMICOLON]
    89 identifier: identifier . O_SQUARE_BRACES ICONST C_SQUARE_BRACES
@@ -2429,14 +2484,14 @@ State 125
     $default  reduce using rule 82 (return_stat)
 
 
-State 126
+State 127
 
    81 return_stat: RETURN const .
 
     $default  reduce using rule 81 (return_stat)
 
 
-State 127
+State 128
 
    28 body: declarations statements .  [C_CURLY_BRACES]
    30 statements: statements . statement
@@ -2469,85 +2524,85 @@ State 127
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    SEMICOLON   shift, and go to state 100
-    IF          shift, and go to state 101
-    FOR         shift, and go to state 102
-    PRINTF      shift, and go to state 103
-    SCANF       shift, and go to state 104
+    SEMICOLON   shift, and go to state 101
+    IF          shift, and go to state 102
+    FOR         shift, and go to state 103
+    PRINTF      shift, and go to state 104
+    SCANF       shift, and go to state 105
     IDENTIFIER  shift, and go to state 13
-    RETURN      shift, and go to state 105
+    RETURN      shift, and go to state 106
 
     $default  reduce using rule 28 (body)
 
-    statement    go to state 129
-    func_call    go to state 110
-    assignment   go to state 111
-    increment    go to state 112
-    printf_stat  go to state 113
-    scanf_stat   go to state 114
-    if_stat      go to state 115
-    for_stat     go to state 116
-    return_stat  go to state 117
-    identifier   go to state 118
+    statement    go to state 130
+    func_call    go to state 111
+    assignment   go to state 112
+    increment    go to state 113
+    printf_stat  go to state 114
+    scanf_stat   go to state 115
+    if_stat      go to state 116
+    for_stat     go to state 117
+    return_stat  go to state 118
+    identifier   go to state 119
 
 
-State 128
+State 129
 
    20 func_definition: var_type identifier O_ROUND_BRACES argument_list C_ROUND_BRACES O_CURLY_BRACES body C_CURLY_BRACES .
 
     $default  reduce using rule 20 (func_definition)
 
 
-State 129
+State 130
 
    30 statements: statements statement .
 
     $default  reduce using rule 30 (statements)
 
 
-State 130
+State 131
 
    32 statement: func_call SEMICOLON .
 
     $default  reduce using rule 32 (statement)
 
 
-State 131
+State 132
 
    33 statement: assignment SEMICOLON .
 
     $default  reduce using rule 33 (statement)
 
 
-State 132
+State 133
 
    34 statement: increment SEMICOLON .
 
     $default  reduce using rule 34 (statement)
 
 
-State 133
+State 134
 
    35 statement: printf_stat SEMICOLON .
 
     $default  reduce using rule 35 (statement)
 
 
-State 134
+State 135
 
    36 statement: scanf_stat SEMICOLON .
 
     $default  reduce using rule 36 (statement)
 
 
-State 135
+State 136
 
    39 statement: return_stat SEMICOLON .
 
     $default  reduce using rule 39 (statement)
 
 
-State 136
+State 137
 
    40 func_call: identifier O_ROUND_BRACES . call_args C_ROUND_BRACES
    42 call_args: . %empty  [C_ROUND_BRACES, COMMA]
@@ -2562,11 +2617,11 @@ State 136
 
     $default  reduce using rule 42 (call_args)
 
-    call_args   go to state 146
-    identifier  go to state 147
+    call_args   go to state 147
+    identifier  go to state 148
 
 
-State 137
+State 138
 
    41 func_call: identifier ASSIGN . identifier O_ROUND_BRACES call_args C_ROUND_BRACES
    45 assignment: identifier ASSIGN . word
@@ -2576,7 +2631,7 @@ State 137
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -2608,25 +2663,25 @@ State 137
 
     expr        go to state 55
     increment   go to state 56
-    identifier  go to state 148
+    identifier  go to state 149
     word        go to state 58
     number      go to state 59
 
 
-State 138
+State 139
 
    16 inizialization_list: O_CURLY_BRACES inizialization_list COMMA inizialization_list . C_CURLY_BRACES
    17                    | inizialization_list . COMMA inizialization_list
    17                    | inizialization_list COMMA inizialization_list .  [COMMA]
 
-    C_CURLY_BRACES  shift, and go to state 149
+    C_CURLY_BRACES  shift, and go to state 150
 
     $default  reduce using rule 17 (inizialization_list)
 
     Conflict between rule 17 and token COMMA resolved as reduce (%left COMMA).
 
 
-State 139
+State 140
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -2639,34 +2694,34 @@ State 139
    70 if_stat: IF O_ROUND_BRACES expr . C_ROUND_BRACES block
    71        | IF O_ROUND_BRACES expr . C_ROUND_BRACES block ELSE block
 
-    C_ROUND_BRACES  shift, and go to state 150
-    ADD             shift, and go to state 76
-    SUB             shift, and go to state 77
-    TIMES           shift, and go to state 78
-    DIVIDE          shift, and go to state 79
-    EQOP            shift, and go to state 80
-    RELOP           shift, and go to state 81
-    AND             shift, and go to state 82
-    OR              shift, and go to state 83
+    C_ROUND_BRACES  shift, and go to state 151
+    ADD             shift, and go to state 77
+    SUB             shift, and go to state 78
+    TIMES           shift, and go to state 79
+    DIVIDE          shift, and go to state 80
+    EQOP            shift, and go to state 81
+    RELOP           shift, and go to state 82
+    AND             shift, and go to state 83
+    OR              shift, and go to state 84
 
 
-State 140
+State 141
 
    76 init_for: assignment .
 
     $default  reduce using rule 76 (init_for)
 
 
-State 141
+State 142
 
    74 for_stat: FOR O_ROUND_BRACES init_for . SEMICOLON expr SEMICOLON incr_for C_ROUND_BRACES block
    77 init_for: init_for . COMMA init_for
 
-    COMMA      shift, and go to state 151
-    SEMICOLON  shift, and go to state 152
+    COMMA      shift, and go to state 152
+    SEMICOLON  shift, and go to state 153
 
 
-State 142
+State 143
 
    45 assignment: identifier . ASSIGN word
    46           | identifier . ASSIGN expr
@@ -2680,40 +2735,40 @@ State 142
     ASSIGN           shift, and go to state 34
 
 
-State 143
+State 144
 
    64 printf_stat: PRINTF O_ROUND_BRACES STRCONST . COMMA printed_var C_ROUND_BRACES
    96 word: STRCONST .  [C_ROUND_BRACES]
 
-    COMMA  shift, and go to state 153
+    COMMA  shift, and go to state 154
 
     $default  reduce using rule 96 (word)
 
 
-State 144
+State 145
 
    63 printf_stat: PRINTF O_ROUND_BRACES word . C_ROUND_BRACES
 
-    C_ROUND_BRACES  shift, and go to state 154
-
-
-State 145
-
-   67 scanf_stat: SCANF O_ROUND_BRACES STRCONST . COMMA retrieved_var C_ROUND_BRACES
-
-    COMMA  shift, and go to state 155
+    C_ROUND_BRACES  shift, and go to state 155
 
 
 State 146
 
-   40 func_call: identifier O_ROUND_BRACES call_args . C_ROUND_BRACES
-   44 call_args: call_args . COMMA identifier
+   67 scanf_stat: SCANF O_ROUND_BRACES STRCONST . COMMA retrieved_var C_ROUND_BRACES
 
-    C_ROUND_BRACES  shift, and go to state 156
-    COMMA           shift, and go to state 157
+    COMMA  shift, and go to state 156
 
 
 State 147
+
+   40 func_call: identifier O_ROUND_BRACES call_args . C_ROUND_BRACES
+   44 call_args: call_args . COMMA identifier
+
+    C_ROUND_BRACES  shift, and go to state 157
+    COMMA           shift, and go to state 158
+
+
+State 148
 
    43 call_args: identifier .  [C_ROUND_BRACES, COMMA]
    89 identifier: identifier . O_SQUARE_BRACES ICONST C_SQUARE_BRACES
@@ -2726,7 +2781,7 @@ State 147
     $default  reduce using rule 43 (call_args)
 
 
-State 148
+State 149
 
    41 func_call: identifier ASSIGN identifier . O_ROUND_BRACES call_args C_ROUND_BRACES
    61 expr: identifier .  [SEMICOLON, ADD, SUB, TIMES, DIVIDE, EQOP, RELOP, AND, OR]
@@ -2736,21 +2791,21 @@ State 148
    91           | identifier . DOT identifier
 
     O_SQUARE_BRACES  shift, and go to state 27
-    O_ROUND_BRACES   shift, and go to state 158
+    O_ROUND_BRACES   shift, and go to state 159
     DOT              shift, and go to state 28
-    INCR             shift, and go to state 84
+    INCR             shift, and go to state 85
 
     $default  reduce using rule 61 (expr)
 
 
-State 149
+State 150
 
    16 inizialization_list: O_CURLY_BRACES inizialization_list COMMA inizialization_list C_CURLY_BRACES .
 
     $default  reduce using rule 16 (inizialization_list)
 
 
-State 150
+State 151
 
    31 statement: . SEMICOLON
    32          | . func_call SEMICOLON
@@ -2785,29 +2840,29 @@ State 150
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    O_CURLY_BRACES  shift, and go to state 159
-    SEMICOLON       shift, and go to state 100
-    IF              shift, and go to state 101
-    FOR             shift, and go to state 102
-    PRINTF          shift, and go to state 103
-    SCANF           shift, and go to state 104
+    O_CURLY_BRACES  shift, and go to state 160
+    SEMICOLON       shift, and go to state 101
+    IF              shift, and go to state 102
+    FOR             shift, and go to state 103
+    PRINTF          shift, and go to state 104
+    SCANF           shift, and go to state 105
     IDENTIFIER      shift, and go to state 13
-    RETURN          shift, and go to state 105
+    RETURN          shift, and go to state 106
 
-    statement    go to state 160
-    func_call    go to state 110
-    assignment   go to state 111
-    increment    go to state 112
-    printf_stat  go to state 113
-    scanf_stat   go to state 114
-    if_stat      go to state 115
-    block        go to state 161
-    for_stat     go to state 116
-    return_stat  go to state 117
-    identifier   go to state 118
+    statement    go to state 161
+    func_call    go to state 111
+    assignment   go to state 112
+    increment    go to state 113
+    printf_stat  go to state 114
+    scanf_stat   go to state 115
+    if_stat      go to state 116
+    block        go to state 162
+    for_stat     go to state 117
+    return_stat  go to state 118
+    identifier   go to state 119
 
 
-State 151
+State 152
 
    45 assignment: . identifier ASSIGN word
    46           | . identifier ASSIGN expr
@@ -2825,18 +2880,18 @@ State 151
 
     $default  reduce using rule 75 (init_for)
 
-    assignment  go to state 140
-    init_for    go to state 162
-    identifier  go to state 142
+    assignment  go to state 141
+    init_for    go to state 163
+    identifier  go to state 143
 
 
-State 152
+State 153
 
    48 expr: . expr ADD expr
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -2862,13 +2917,13 @@ State 152
     ICONST          shift, and go to state 51
     FCONST          shift, and go to state 52
 
-    expr        go to state 163
+    expr        go to state 164
     increment   go to state 56
     identifier  go to state 57
     number      go to state 59
 
 
-State 153
+State 154
 
    64 printf_stat: PRINTF O_ROUND_BRACES STRCONST COMMA . printed_var C_ROUND_BRACES
    65 printed_var: . identifier
@@ -2880,36 +2935,36 @@ State 153
 
     IDENTIFIER  shift, and go to state 13
 
-    printed_var  go to state 164
-    identifier   go to state 165
+    printed_var  go to state 165
+    identifier   go to state 166
 
 
-State 154
+State 155
 
    63 printf_stat: PRINTF O_ROUND_BRACES word C_ROUND_BRACES .
 
     $default  reduce using rule 63 (printf_stat)
 
 
-State 155
+State 156
 
    67 scanf_stat: SCANF O_ROUND_BRACES STRCONST COMMA . retrieved_var C_ROUND_BRACES
    68 retrieved_var: . E_COMM identifier
    69              | . retrieved_var COMMA retrieved_var
 
-    E_COMM  shift, and go to state 166
+    E_COMM  shift, and go to state 167
 
-    retrieved_var  go to state 167
+    retrieved_var  go to state 168
 
 
-State 156
+State 157
 
    40 func_call: identifier O_ROUND_BRACES call_args C_ROUND_BRACES .
 
     $default  reduce using rule 40 (func_call)
 
 
-State 157
+State 158
 
    44 call_args: call_args COMMA . identifier
    88 identifier: . IDENTIFIER
@@ -2919,10 +2974,10 @@ State 157
 
     IDENTIFIER  shift, and go to state 13
 
-    identifier  go to state 168
+    identifier  go to state 169
 
 
-State 158
+State 159
 
    41 func_call: identifier ASSIGN identifier O_ROUND_BRACES . call_args C_ROUND_BRACES
    42 call_args: . %empty  [C_ROUND_BRACES, COMMA]
@@ -2937,11 +2992,11 @@ State 158
 
     $default  reduce using rule 42 (call_args)
 
-    call_args   go to state 169
-    identifier  go to state 147
+    call_args   go to state 170
+    identifier  go to state 148
 
 
-State 159
+State 160
 
    29 statements: . statement
    30           | . statements statement
@@ -2975,46 +3030,46 @@ State 159
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    SEMICOLON   shift, and go to state 100
-    IF          shift, and go to state 101
-    FOR         shift, and go to state 102
-    PRINTF      shift, and go to state 103
-    SCANF       shift, and go to state 104
+    SEMICOLON   shift, and go to state 101
+    IF          shift, and go to state 102
+    FOR         shift, and go to state 103
+    PRINTF      shift, and go to state 104
+    SCANF       shift, and go to state 105
     IDENTIFIER  shift, and go to state 13
-    RETURN      shift, and go to state 105
+    RETURN      shift, and go to state 106
 
-    statements   go to state 170
-    statement    go to state 109
-    func_call    go to state 110
-    assignment   go to state 111
-    increment    go to state 112
-    printf_stat  go to state 113
-    scanf_stat   go to state 114
-    if_stat      go to state 115
-    for_stat     go to state 116
-    return_stat  go to state 117
-    identifier   go to state 118
+    statements   go to state 171
+    statement    go to state 110
+    func_call    go to state 111
+    assignment   go to state 112
+    increment    go to state 113
+    printf_stat  go to state 114
+    scanf_stat   go to state 115
+    if_stat      go to state 116
+    for_stat     go to state 117
+    return_stat  go to state 118
+    identifier   go to state 119
 
 
-State 160
+State 161
 
    72 block: statement .
 
     $default  reduce using rule 72 (block)
 
 
-State 161
+State 162
 
    70 if_stat: IF O_ROUND_BRACES expr C_ROUND_BRACES block .  [C_CURLY_BRACES, SEMICOLON, IF, ELSE, FOR, PRINTF, SCANF, IDENTIFIER, RETURN]
    71        | IF O_ROUND_BRACES expr C_ROUND_BRACES block . ELSE block
 
-    ELSE  shift, and go to state 171
+    ELSE  shift, and go to state 172
 
     ELSE      [reduce using rule 70 (if_stat)]
     $default  reduce using rule 70 (if_stat)
 
 
-State 162
+State 163
 
    77 init_for: init_for . COMMA init_for
    77         | init_for COMMA init_for .  [COMMA, SEMICOLON]
@@ -3024,7 +3079,7 @@ State 162
     Conflict between rule 77 and token COMMA resolved as reduce (%left COMMA).
 
 
-State 163
+State 164
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -3036,27 +3091,27 @@ State 163
    57     | expr . OR expr
    74 for_stat: FOR O_ROUND_BRACES init_for SEMICOLON expr . SEMICOLON incr_for C_ROUND_BRACES block
 
-    SEMICOLON  shift, and go to state 172
-    ADD        shift, and go to state 76
-    SUB        shift, and go to state 77
-    TIMES      shift, and go to state 78
-    DIVIDE     shift, and go to state 79
-    EQOP       shift, and go to state 80
-    RELOP      shift, and go to state 81
-    AND        shift, and go to state 82
-    OR         shift, and go to state 83
+    SEMICOLON  shift, and go to state 173
+    ADD        shift, and go to state 77
+    SUB        shift, and go to state 78
+    TIMES      shift, and go to state 79
+    DIVIDE     shift, and go to state 80
+    EQOP       shift, and go to state 81
+    RELOP      shift, and go to state 82
+    AND        shift, and go to state 83
+    OR         shift, and go to state 84
 
 
-State 164
+State 165
 
    64 printf_stat: PRINTF O_ROUND_BRACES STRCONST COMMA printed_var . C_ROUND_BRACES
    66 printed_var: printed_var . COMMA printed_var
 
-    C_ROUND_BRACES  shift, and go to state 173
-    COMMA           shift, and go to state 174
+    C_ROUND_BRACES  shift, and go to state 174
+    COMMA           shift, and go to state 175
 
 
-State 165
+State 166
 
    65 printed_var: identifier .  [C_ROUND_BRACES, COMMA]
    89 identifier: identifier . O_SQUARE_BRACES ICONST C_SQUARE_BRACES
@@ -3069,7 +3124,7 @@ State 165
     $default  reduce using rule 65 (printed_var)
 
 
-State 166
+State 167
 
    68 retrieved_var: E_COMM . identifier
    88 identifier: . IDENTIFIER
@@ -3079,19 +3134,19 @@ State 166
 
     IDENTIFIER  shift, and go to state 13
 
-    identifier  go to state 175
+    identifier  go to state 176
 
 
-State 167
+State 168
 
    67 scanf_stat: SCANF O_ROUND_BRACES STRCONST COMMA retrieved_var . C_ROUND_BRACES
    69 retrieved_var: retrieved_var . COMMA retrieved_var
 
-    C_ROUND_BRACES  shift, and go to state 176
-    COMMA           shift, and go to state 177
+    C_ROUND_BRACES  shift, and go to state 177
+    COMMA           shift, and go to state 178
 
 
-State 168
+State 169
 
    44 call_args: call_args COMMA identifier .  [C_ROUND_BRACES, COMMA]
    89 identifier: identifier . O_SQUARE_BRACES ICONST C_SQUARE_BRACES
@@ -3104,16 +3159,16 @@ State 168
     $default  reduce using rule 44 (call_args)
 
 
-State 169
+State 170
 
    41 func_call: identifier ASSIGN identifier O_ROUND_BRACES call_args . C_ROUND_BRACES
    44 call_args: call_args . COMMA identifier
 
-    C_ROUND_BRACES  shift, and go to state 178
-    COMMA           shift, and go to state 157
+    C_ROUND_BRACES  shift, and go to state 179
+    COMMA           shift, and go to state 158
 
 
-State 170
+State 171
 
    30 statements: statements . statement
    31 statement: . SEMICOLON
@@ -3146,28 +3201,28 @@ State 170
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    C_CURLY_BRACES  shift, and go to state 179
-    SEMICOLON       shift, and go to state 100
-    IF              shift, and go to state 101
-    FOR             shift, and go to state 102
-    PRINTF          shift, and go to state 103
-    SCANF           shift, and go to state 104
+    C_CURLY_BRACES  shift, and go to state 180
+    SEMICOLON       shift, and go to state 101
+    IF              shift, and go to state 102
+    FOR             shift, and go to state 103
+    PRINTF          shift, and go to state 104
+    SCANF           shift, and go to state 105
     IDENTIFIER      shift, and go to state 13
-    RETURN          shift, and go to state 105
+    RETURN          shift, and go to state 106
 
-    statement    go to state 129
-    func_call    go to state 110
-    assignment   go to state 111
-    increment    go to state 112
-    printf_stat  go to state 113
-    scanf_stat   go to state 114
-    if_stat      go to state 115
-    for_stat     go to state 116
-    return_stat  go to state 117
-    identifier   go to state 118
+    statement    go to state 130
+    func_call    go to state 111
+    assignment   go to state 112
+    increment    go to state 113
+    printf_stat  go to state 114
+    scanf_stat   go to state 115
+    if_stat      go to state 116
+    for_stat     go to state 117
+    return_stat  go to state 118
+    identifier   go to state 119
 
 
-State 171
+State 172
 
    31 statement: . SEMICOLON
    32          | . func_call SEMICOLON
@@ -3201,35 +3256,35 @@ State 171
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    O_CURLY_BRACES  shift, and go to state 159
-    SEMICOLON       shift, and go to state 100
-    IF              shift, and go to state 101
-    FOR             shift, and go to state 102
-    PRINTF          shift, and go to state 103
-    SCANF           shift, and go to state 104
+    O_CURLY_BRACES  shift, and go to state 160
+    SEMICOLON       shift, and go to state 101
+    IF              shift, and go to state 102
+    FOR             shift, and go to state 103
+    PRINTF          shift, and go to state 104
+    SCANF           shift, and go to state 105
     IDENTIFIER      shift, and go to state 13
-    RETURN          shift, and go to state 105
+    RETURN          shift, and go to state 106
 
-    statement    go to state 160
-    func_call    go to state 110
-    assignment   go to state 111
-    increment    go to state 112
-    printf_stat  go to state 113
-    scanf_stat   go to state 114
-    if_stat      go to state 115
-    block        go to state 180
-    for_stat     go to state 116
-    return_stat  go to state 117
-    identifier   go to state 118
+    statement    go to state 161
+    func_call    go to state 111
+    assignment   go to state 112
+    increment    go to state 113
+    printf_stat  go to state 114
+    scanf_stat   go to state 115
+    if_stat      go to state 116
+    block        go to state 181
+    for_stat     go to state 117
+    return_stat  go to state 118
+    identifier   go to state 119
 
 
-State 172
+State 173
 
    48 expr: . expr ADD expr
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -3257,21 +3312,21 @@ State 172
     ICONST          shift, and go to state 51
     FCONST          shift, and go to state 52
 
-    expr        go to state 181
+    expr        go to state 182
     increment   go to state 56
-    incr_for    go to state 182
+    incr_for    go to state 183
     identifier  go to state 57
     number      go to state 59
 
 
-State 173
+State 174
 
    64 printf_stat: PRINTF O_ROUND_BRACES STRCONST COMMA printed_var C_ROUND_BRACES .
 
     $default  reduce using rule 64 (printf_stat)
 
 
-State 174
+State 175
 
    65 printed_var: . identifier
    66            | . printed_var COMMA printed_var
@@ -3283,11 +3338,11 @@ State 174
 
     IDENTIFIER  shift, and go to state 13
 
-    printed_var  go to state 183
-    identifier   go to state 165
+    printed_var  go to state 184
+    identifier   go to state 166
 
 
-State 175
+State 176
 
    68 retrieved_var: E_COMM identifier .  [C_ROUND_BRACES, COMMA]
    89 identifier: identifier . O_SQUARE_BRACES ICONST C_SQUARE_BRACES
@@ -3300,46 +3355,46 @@ State 175
     $default  reduce using rule 68 (retrieved_var)
 
 
-State 176
+State 177
 
    67 scanf_stat: SCANF O_ROUND_BRACES STRCONST COMMA retrieved_var C_ROUND_BRACES .
 
     $default  reduce using rule 67 (scanf_stat)
 
 
-State 177
+State 178
 
    68 retrieved_var: . E_COMM identifier
    69              | . retrieved_var COMMA retrieved_var
    69              | retrieved_var COMMA . retrieved_var
 
-    E_COMM  shift, and go to state 166
+    E_COMM  shift, and go to state 167
 
-    retrieved_var  go to state 184
+    retrieved_var  go to state 185
 
 
-State 178
+State 179
 
    41 func_call: identifier ASSIGN identifier O_ROUND_BRACES call_args C_ROUND_BRACES .
 
     $default  reduce using rule 41 (func_call)
 
 
-State 179
+State 180
 
    73 block: O_CURLY_BRACES statements C_CURLY_BRACES .
 
     $default  reduce using rule 73 (block)
 
 
-State 180
+State 181
 
    71 if_stat: IF O_ROUND_BRACES expr C_ROUND_BRACES block ELSE block .
 
     $default  reduce using rule 71 (if_stat)
 
 
-State 181
+State 182
 
    48 expr: expr . ADD expr
    49     | expr . SUB expr
@@ -3351,28 +3406,28 @@ State 181
    57     | expr . OR expr
    78 incr_for: expr .  [C_ROUND_BRACES, COMMA]
 
-    ADD     shift, and go to state 76
-    SUB     shift, and go to state 77
-    TIMES   shift, and go to state 78
-    DIVIDE  shift, and go to state 79
-    EQOP    shift, and go to state 80
-    RELOP   shift, and go to state 81
-    AND     shift, and go to state 82
-    OR      shift, and go to state 83
+    ADD     shift, and go to state 77
+    SUB     shift, and go to state 78
+    TIMES   shift, and go to state 79
+    DIVIDE  shift, and go to state 80
+    EQOP    shift, and go to state 81
+    RELOP   shift, and go to state 82
+    AND     shift, and go to state 83
+    OR      shift, and go to state 84
 
     $default  reduce using rule 78 (incr_for)
 
 
-State 182
+State 183
 
    74 for_stat: FOR O_ROUND_BRACES init_for SEMICOLON expr SEMICOLON incr_for . C_ROUND_BRACES block
    79 incr_for: incr_for . COMMA incr_for
 
-    C_ROUND_BRACES  shift, and go to state 185
-    COMMA           shift, and go to state 186
+    C_ROUND_BRACES  shift, and go to state 186
+    COMMA           shift, and go to state 187
 
 
-State 183
+State 184
 
    66 printed_var: printed_var . COMMA printed_var
    66            | printed_var COMMA printed_var .  [C_ROUND_BRACES, COMMA]
@@ -3382,7 +3437,7 @@ State 183
     Conflict between rule 66 and token COMMA resolved as reduce (%left COMMA).
 
 
-State 184
+State 185
 
    69 retrieved_var: retrieved_var . COMMA retrieved_var
    69              | retrieved_var COMMA retrieved_var .  [C_ROUND_BRACES, COMMA]
@@ -3392,7 +3447,7 @@ State 184
     Conflict between rule 69 and token COMMA resolved as reduce (%left COMMA).
 
 
-State 185
+State 186
 
    31 statement: . SEMICOLON
    32          | . func_call SEMICOLON
@@ -3426,35 +3481,35 @@ State 185
    90           | . identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
    91           | . identifier DOT identifier
 
-    O_CURLY_BRACES  shift, and go to state 159
-    SEMICOLON       shift, and go to state 100
-    IF              shift, and go to state 101
-    FOR             shift, and go to state 102
-    PRINTF          shift, and go to state 103
-    SCANF           shift, and go to state 104
+    O_CURLY_BRACES  shift, and go to state 160
+    SEMICOLON       shift, and go to state 101
+    IF              shift, and go to state 102
+    FOR             shift, and go to state 103
+    PRINTF          shift, and go to state 104
+    SCANF           shift, and go to state 105
     IDENTIFIER      shift, and go to state 13
-    RETURN          shift, and go to state 105
+    RETURN          shift, and go to state 106
 
-    statement    go to state 160
-    func_call    go to state 110
-    assignment   go to state 111
-    increment    go to state 112
-    printf_stat  go to state 113
-    scanf_stat   go to state 114
-    if_stat      go to state 115
-    block        go to state 187
-    for_stat     go to state 116
-    return_stat  go to state 117
-    identifier   go to state 118
+    statement    go to state 161
+    func_call    go to state 111
+    assignment   go to state 112
+    increment    go to state 113
+    printf_stat  go to state 114
+    scanf_stat   go to state 115
+    if_stat      go to state 116
+    block        go to state 188
+    for_stat     go to state 117
+    return_stat  go to state 118
+    identifier   go to state 119
 
 
-State 186
+State 187
 
    48 expr: . expr ADD expr
    49     | . expr SUB expr
    50     | . expr TIMES expr
    51     | . expr DIVIDE expr
-   52     | . SUB
+   52     | . SUB expr
    53     | . increment
    54     | . expr EQOP expr
    55     | . expr RELOP expr
@@ -3482,21 +3537,21 @@ State 186
     ICONST          shift, and go to state 51
     FCONST          shift, and go to state 52
 
-    expr        go to state 181
+    expr        go to state 182
     increment   go to state 56
-    incr_for    go to state 188
+    incr_for    go to state 189
     identifier  go to state 57
     number      go to state 59
 
 
-State 187
+State 188
 
    74 for_stat: FOR O_ROUND_BRACES init_for SEMICOLON expr SEMICOLON incr_for C_ROUND_BRACES block .
 
     $default  reduce using rule 74 (for_stat)
 
 
-State 188
+State 189
 
    79 incr_for: incr_for . COMMA incr_for
    79         | incr_for COMMA incr_for .  [C_ROUND_BRACES, COMMA]

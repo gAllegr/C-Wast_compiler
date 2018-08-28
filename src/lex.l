@@ -13,15 +13,10 @@ Although disabling yywrap is certainly the best option, it may also be possible 
 	#include "grammar.tab.h"
 	#include <stdlib.h>
 	#include <string.h>
-
-	/* prints grammar violation message */
-	void yyerror(const char *);
-
-	/* variable counting lines */
-	int lineno = 1;
+	#include "../src/utils.h"
 
 	static inline void print_token() { printf("%s ", yytext); }
-	static inline void value_token() { yylval = yytext; }
+	static inline void value_token() { yylval = strdup(yytext); }
 %}
 
 
@@ -116,8 +111,3 @@ id				{alpha}({alpha}|{digit}|{underscore})*
 .               			{yyerror("Unrecognized character");}
 
 %%
-
-void yyerror (const char *s)
-{
-  fprintf(stderr, "Syntax error at line %d (token: %s)\n", lineno,yytext);
-}

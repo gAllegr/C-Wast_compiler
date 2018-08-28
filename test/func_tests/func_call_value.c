@@ -10,4 +10,6 @@ int main ()
 {
 	int c = 1, d = 2, somma;
 	somma = sum(c,d);
+
+	return 0;
 }

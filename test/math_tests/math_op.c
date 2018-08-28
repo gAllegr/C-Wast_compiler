@@ -12,6 +12,7 @@ int main()
 	r = 6 - 4;
 	r = a * b;
 	r = b / 1;
+	r = -a;
 
 	/* commento */
 
