@@ -1,6 +1,3 @@
-State 162 conflicts: 1 shift/reduce
-
-
 Grammar
 
     0 $accept: program $end
@@ -181,83 +178,84 @@ FCONST (292) 93 98
 CCONST (293) 94 95
 STRCONST (294) 15 64 67 96
 REV (295)
+IFX (296)
 
 
 Nonterminals, with rules where they appear
 
-$accept (41)
+$accept (42)
     on left: 0
-program (42)
+program (43)
     on left: 1 2, on right: 0
-declarations (43)
+declarations (44)
     on left: 3 4, on right: 2 4 12 28
-declaration (44)
+declaration (45)
     on left: 5 6, on right: 3 4
-var_decl (45)
+var_decl (46)
     on left: 7 8 9, on right: 5 9 12
-simple_declaration (46)
+simple_declaration (47)
     on left: 10 11, on right: 7
-struct_declaration (47)
+struct_declaration (48)
     on left: 12, on right: 6
-inizialization_list (48)
+inizialization_list (49)
     on left: 13 14 15 16 17, on right: 16 17 47
-functions (49)
+functions (50)
     on left: 18 19, on right: 1 2 19
-func_definition (50)
+func_definition (51)
     on left: 20, on right: 18 19
-argument_list (51)
+argument_list (52)
     on left: 21 22 23, on right: 20
-parameter_list (52)
+parameter_list (53)
     on left: 24 25, on right: 23 25
-parameter_declaration (53)
+parameter_declaration (54)
     on left: 26, on right: 24 25
-body (54)
+body (55)
     on left: 27 28, on right: 20
-statements (55)
+statements (56)
     on left: 29 30, on right: 27 28 30 73
-statement (56)
+statement (57)
     on left: 31 32 33 34 35 36 37 38 39, on right: 29 30 72
-func_call (57)
+func_call (58)
     on left: 40 41, on right: 32
-call_args (58)
+call_args (59)
     on left: 42 43 44, on right: 40 41 44
-assignment (59)
+assignment (60)
     on left: 45 46 47, on right: 8 33 76
-expr (60)
+expr (61)
     on left: 48 49 50 51 52 53 54 55 56 57 58 59 60 61, on right: 46
     48 49 50 51 52 54 55 56 57 58 59 70 71 74 78
-increment (61)
+increment (62)
     on left: 62, on right: 34 53
-printf_stat (62)
+printf_stat (63)
     on left: 63 64, on right: 35
-printed_var (63)
+printed_var (64)
     on left: 65 66, on right: 64 66
-scanf_stat (64)
+scanf_stat (65)
     on left: 67, on right: 36
-retrieved_var (65)
+retrieved_var (66)
     on left: 68 69, on right: 67 69
-if_stat (66)
+if_stat (67)
     on left: 70 71, on right: 37
-block (67)
+block (68)
     on left: 72 73, on right: 70 71 74
-for_stat (68)
+for_stat (69)
     on left: 74, on right: 38
-init_for (69)
+init_for (70)
     on left: 75 76 77, on right: 74 77
-incr_for (70)
+incr_for (71)
     on left: 78 79, on right: 74 79
-return_stat (71)
+return_stat (72)
     on left: 80 81 82, on right: 39
-var_type (72)
+var_type (73)
     on left: 83 84 85 86 87, on right: 5 20 26
-identifier (73)
+identifier (74)
     on left: 88 89 90 91, on right: 11 12 13 20 26 40 41 43 44 45 46
     47 61 62 65 68 82 87 89 90 91
-const (74)
+const (75)
     on left: 92 93 94, on right: 14 81
-word (75)
+word (76)
     on left: 95 96, on right: 45 63
-number (76)
+number (77)
     on left: 97 98, on right: 60
 
 
@@ -3060,13 +3058,14 @@ State 161
 
 State 162
 
-   70 if_stat: IF O_ROUND_BRACES expr C_ROUND_BRACES block .  [C_CURLY_BRACES, SEMICOLON, IF, ELSE, FOR, PRINTF, SCANF, IDENTIFIER, RETURN]
+   70 if_stat: IF O_ROUND_BRACES expr C_ROUND_BRACES block .  [C_CURLY_BRACES, SEMICOLON, IF, FOR, PRINTF, SCANF, IDENTIFIER, RETURN]
    71        | IF O_ROUND_BRACES expr C_ROUND_BRACES block . ELSE block
 
     ELSE  shift, and go to state 172
 
-    ELSE      [reduce using rule 70 (if_stat)]
     $default  reduce using rule 70 (if_stat)
+
+    Conflict between rule 70 and token ELSE resolved as shift (IFX < ELSE).
 
 
 State 163

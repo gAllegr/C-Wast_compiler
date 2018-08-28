@@ -44,6 +44,9 @@
 %right NOT E_COMM REV
 %left DOT INCR O_ROUND_BRACES C_ROUND_BRACES O_SQUARE_BRACES C_SQUARE_BRACES
 
+%nonassoc IFX
+%nonassoc ELSE
+
 %start program
 
 /* Translation rules */
@@ -51,7 +54,10 @@
 /* Stream identifies the whole C program submitted for compilation
 C language is a procedural language, it only allows declarations and functions */
 program
-    : functions                             {printf("\n\n|%s|\n",$$);}   
+    : functions
+        {
+            printf("\n\n|%s|\n",$$);
+        }   
     | declarations functions
         {
             $$ = concat(2,$1,$2);
@@ -373,7 +379,7 @@ IF statement supports:
 - only then-branch with single/multiple instruction
 - both then-branch and else-branch with single/multiple instruction */
 if_stat
-	: IF O_ROUND_BRACES expr C_ROUND_BRACES block
+	: IF O_ROUND_BRACES expr C_ROUND_BRACES block %prec IFX
         {
             $$ = concat(5,$1,$2,$3,$4,$5);
         }

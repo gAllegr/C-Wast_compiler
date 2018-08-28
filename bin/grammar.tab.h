@@ -82,7 +82,8 @@ extern int yydebug;
     FCONST = 292,
     CCONST = 293,
     STRCONST = 294,
-    REV = 295
+    REV = 295,
+    IFX = 296
   };
 #endif
 

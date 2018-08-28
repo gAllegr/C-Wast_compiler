@@ -19,9 +19,6 @@ Aim of this project is to implement a front-end compiler which transform a C sou
 `sudo apt install xdot`
 
 ## Lexicon and Syntax Rules
-### S/S and S/R Conflicts
-This compiler has only 1 shift/reduce conflict, related to [dangling else](https://en.wikipedia.org/wiki/Dangling_else) problem.
-
 ### Types allowed
 * Integer values
 * Float values
@@ -128,6 +125,8 @@ Examples: `int main ()` or `void main (void)`
 * Support both IF and IF-ELSE statements
 * Support nested IFs
 * Then-branch and Else-branch can have a single instruction or a block/sequence of instructions
+* The S/R conflict of the [dangling else](https://en.wikipedia.org/wiki/Dangling_else) has been solved with the shift action. The else-branch is attached to the nearby if-statement, as C language's convention.
+
 
 *Examples of allowed syntax can be found in folder* `test/if_tests`<br>
 
