@@ -49,3 +49,8 @@ char* concat(int n_token, char *token,...)
 	va_end(vl);
 	return concatenated;
 }
+
+/* ===== Syntax Tree ===== */
+
+
+

@@ -14,25 +14,33 @@
 	//int yydebug = 1;
 %}
 
+%union {
+    char *token;
+    int cmp;        /* which comparison */
+}
+
 /* BISON DECLARATION */
 /* Braces declarations */
-%token O_CURLY_BRACES C_CURLY_BRACES O_SQUARE_BRACES C_SQUARE_BRACES O_ROUND_BRACES C_ROUND_BRACES
+%token <token> O_CURLY_BRACES C_CURLY_BRACES O_SQUARE_BRACES C_SQUARE_BRACES O_ROUND_BRACES C_ROUND_BRACES
 /* Punctuation */
-%token DOT COMMA SEMICOLON E_COMM
+%token <token> DOT COMMA SEMICOLON E_COMM
 /* Mathematical operators */
-%token ASSIGN ADD SUB TIMES DIVIDE INCR
+%token <token> ASSIGN ADD SUB TIMES DIVIDE INCR
 /* Relational and logical operators */
-%token EQOP RELOP AND OR NOT
+%token <cmp> EQOP RELOP
+%token <token> AND OR NOT
 /* Flow modifier keywords */
-%token IF ELSE FOR
+%token <token> IF ELSE FOR
 /* I/O keywords */
-%token PRINTF SCANF
+%token <token> PRINTF SCANF
 /* Function and variable keywords */
-%token IDENTIFIER RETURN VOID INT FLOAT CHAR STRUCT
+%token <token> IDENTIFIER RETURN VOID INT FLOAT CHAR STRUCT
 /* Value keywords */
-%token ICONST FCONST CCONST STRCONST
+%token <token> ICONST FCONST CCONST STRCONST
 
 /* Precedence rules */
+%nonassoc IFX
+%nonassoc ELSE
 %left COMMA
 %right ASSIGN
 %left OR
@@ -44,10 +52,11 @@
 %right NOT E_COMM REV
 %left DOT INCR O_ROUND_BRACES C_ROUND_BRACES O_SQUARE_BRACES C_SQUARE_BRACES
 
-%nonassoc IFX
-%nonassoc ELSE
+%type <token> program declarations declaration var_decl simple_declaration struct_declaration inizialization_list 
+%type <token> functions func_definition argument_list parameter_list parameter_declaration body statements statement func_call call_args 
+%type <token> assignment expr increment printf_stat printed_var scanf_stat retrieved_var if_stat block for_stat init_for incr_for return_stat var_type identifier const word number
 
-%start program
+%start program declarations declaration var_decl
 
 /* Translation rules */
 %%

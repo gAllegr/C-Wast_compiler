@@ -73,12 +73,12 @@ id				{alpha}({alpha}|{digit}|{underscore})*
 "*"							{print_token(); value_token(); return TIMES;}
 "/"							{print_token(); value_token(); return DIVIDE;}
 
-"=="						{print_token(); value_token(); return EQOP;}
-"!="						{print_token(); value_token(); return EQOP;}
-"<"							{print_token(); value_token(); return RELOP;}
-"<="						{print_token(); value_token(); return RELOP;}
-">"							{print_token(); value_token(); return RELOP;}
-">="						{print_token(); value_token(); return RELOP;}
+"=="						{print_token(); yylval.cmp = EQ; return EQOP;}
+"!="						{print_token(); yylval.cmp = NE; return EQOP;}
+"<"							{print_token(); yylval.cmp = LT; return RELOP;}
+"<="						{print_token(); yylval.cmp = LE; return RELOP;}
+">"							{print_token(); yylval.cmp = GT; return RELOP;}
+">="						{print_token(); yylval.cmp = GE; return RELOP;}
 
 "&&"						{print_token(); value_token(); return AND;}
 "||"						{print_token(); value_token(); return OR;}
