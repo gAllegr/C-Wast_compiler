@@ -13,10 +13,12 @@ char* concat(int n_token, char *token,...);     /* concat tokens of a rule */
 enum NodeType {
     GENERIC,
     FUNCTION,
-    IF,
-    FOR,
+    IDENTIFIER,
     CONST,
-    CMP
+    ASSIGN,
+    EXP,
+    IF,
+    FOR
 };
 
 /* Enumeration for value types */
@@ -25,16 +27,26 @@ enum ValType {
     INT,
     FLOAT,
     CHAR,
-    STRING
+    STRING,
+    STRUCT
 };
 
-enum Cmp_Op {
-    EQ,
-    NE,
-    LT,
-    LE,
-    GT,
-    GE
+enum Operator {
+    IN,       /* ++ */
+    DE,       /* -- */
+    AD,       /* + */
+    SU,       /* - */
+    MU,       /* * */
+    DI,       /* / */
+    EQ,       /* == */
+    NE,       /* != */
+    LT,       /* < */
+    LE,       /* <= */
+    GT,       /* > */
+    GE,       /* >= */
+    LA,       /* && */
+    LO,       /* || */
+    LN        /* ! */
 };
 
 /* Generic nodes in the Abstract Syntax Tree */
@@ -44,11 +56,24 @@ struct ast {
   struct ast *r;
 };
 
-/* Function node */
+/* Function Call node */
 struct ast_fun {
   enum NodeType nodetype;
+  struct symbol identifier;
   struct ast *l;		/* list of arguments */
-  char *name;
+};
+
+/* Identifier node */
+struct symbol {
+    enum NodeType nodetype;
+    char *name;
+    enum ValType type;
+    union {
+        int ival;
+        float fval;
+        char cval;
+        char *sval;
+    };
 };
 
 /* IF statement node */
@@ -70,7 +95,7 @@ struct ast_for {
 
 /* Constant node */
 struct ast_const {
-  enum NodeType nodetype;
+    enum NodeType nodetype;
     enum ValType type;
     union {
         int ival;
@@ -80,11 +105,23 @@ struct ast_const {
     };
 };
 
-/* Comparison node */
-struct ast_cmp {
+/* Expression node */
+struct ast_exp {
     enum NodeType nodetype;
-    enum Cmp_Op cmp_op;
+    enum Operator op;
     struct ast *left;
     struct ast *right;
 };
 
+/* Assignment node */
+struct ast_assign {
+    enum NodeType nodetype;
+    struct symbol identifier;
+    struct ast *value;
+};
+
+/* I/O node */
+struct ast_io {
+    enum NodeType nodetype;
+    int print;
+};

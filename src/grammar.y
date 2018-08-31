@@ -1,7 +1,5 @@
 %{
 	/* CONTENT TO BE COPIED AT THE BEGINNING */
-	
-	#define YYSTYPE char*
 
 	/* include directives */
 	#include <stdio.h>
@@ -16,7 +14,7 @@
 
 %union {
     char *token;
-    int cmp;        /* which comparison */
+    int op;        /* logical, relational and mathematical operator */
 }
 
 /* BISON DECLARATION */
@@ -25,10 +23,10 @@
 /* Punctuation */
 %token <token> DOT COMMA SEMICOLON E_COMM
 /* Mathematical operators */
-%token <token> ASSIGN ADD SUB TIMES DIVIDE INCR
+%token <token> ASSIGN
+%token <op> ADD SUB TIMES DIVIDE INCR
 /* Relational and logical operators */
-%token <cmp> EQOP RELOP
-%token <token> AND OR NOT
+%token <op> EQOP RELOP AND OR NOT
 /* Flow modifier keywords */
 %token <token> IF ELSE FOR
 /* I/O keywords */

@@ -6,9 +6,6 @@ Although disabling yywrap is certainly the best option, it may also be possible 
 
 %{
 	/* PRE-PROCESSOR SECTION */
-
-	#define YYSTYPE char*
-
 	/* Everything listed here will be copied */
 	#include "grammar.tab.h"
 	#include <stdlib.h>
@@ -65,24 +62,24 @@ id				{alpha}({alpha}|{digit}|{underscore})*
 
 "="							{print_token(); value_token(); return ASSIGN;}
 
-"++"						{print_token(); value_token(); return INCR;}
-"--"						{print_token(); value_token(); return INCR;}
+"++"						{print_token(); yylval.op = IN; return INCR;}
+"--"						{print_token(); yylval.op = DE; return INCR;}
 
-"+"							{print_token(); value_token(); return ADD;}
-"-"							{print_token(); value_token(); return SUB;}
-"*"							{print_token(); value_token(); return TIMES;}
-"/"							{print_token(); value_token(); return DIVIDE;}
+"+"							{print_token(); yylval.op = AD; return ADD;}
+"-"							{print_token(); yylval.op = SU; return SUB;}
+"*"							{print_token(); yylval.op = MU; return TIMES;}
+"/"							{print_token(); yylval.op = DI; return DIVIDE;}
 
-"=="						{print_token(); yylval.cmp = EQ; return EQOP;}
-"!="						{print_token(); yylval.cmp = NE; return EQOP;}
-"<"							{print_token(); yylval.cmp = LT; return RELOP;}
-"<="						{print_token(); yylval.cmp = LE; return RELOP;}
-">"							{print_token(); yylval.cmp = GT; return RELOP;}
-">="						{print_token(); yylval.cmp = GE; return RELOP;}
+"=="						{print_token(); yylval.op = EQ; return EQOP;}
+"!="						{print_token(); yylval.op = NE; return EQOP;}
+"<"							{print_token(); yylval.op = LT; return RELOP;}
+"<="						{print_token(); yylval.op = LE; return RELOP;}
+">"							{print_token(); yylval.op = GT; return RELOP;}
+">="						{print_token(); yylval.op = GE; return RELOP;}
 
-"&&"						{print_token(); value_token(); return AND;}
-"||"						{print_token(); value_token(); return OR;}
-"!"							{print_token(); value_token(); return NOT;}
+"&&"						{print_token(); yylval.op = LA; return AND;}
+"||"						{print_token(); yylval.op = LO; return OR;}
+"!"							{print_token(); yylval.op = LN; return NOT;}
 
 "char"						{print_token(); value_token(); return CHAR;}
 "else"						{print_token(); value_token(); return ELSE;}

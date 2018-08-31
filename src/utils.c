@@ -36,15 +36,15 @@ int main (void)
 char* concat(int n_token, char *token,...)
 {
 	int i;
-	char *concatenated = token;
-
 	va_list vl;
 	va_start(vl,token);
 
+	char *concatenated = strcat("(",token);
 	for(i=1; i<n_token; i++)
 	{
-		concatenated = strcat(strcat(concatenated," "),va_arg(vl,char *));
+		concatenated = strcat(strcat(concatenated,","),va_arg(vl,char *));
 	}
+	*concatenated = strcat(concatenated,")");
 
 	va_end(vl);
 	return concatenated;
