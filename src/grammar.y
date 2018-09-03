@@ -1,37 +1,47 @@
 %{
 	/* CONTENT TO BE COPIED AT THE BEGINNING */
 
-    #define YYSTYPE char*
 
 	/* include directives */
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <string.h>
 	#include "../src/utils.h"
+    #include "../src/ast.h"
+    #include "../src/list.h"
 
 	int yylex();
     /* Variable needed for debugging */
 	//int yydebug = 1;
+
+    typedef union {
+        char *sval;
+        AST *node;
+        int operator;
+        int builtin;
+        int value_type;
+    } yystype;
+    #define YYSTYPE yystype;
 %}
 
 /* BISON DECLARATION */
 /* Braces declarations */
-%token O_CURLY_BRACES C_CURLY_BRACES O_SQUARE_BRACES C_SQUARE_BRACES O_ROUND_BRACES C_ROUND_BRACES
+%token <sval> O_CURLY_BRACES C_CURLY_BRACES O_SQUARE_BRACES C_SQUARE_BRACES O_ROUND_BRACES C_ROUND_BRACES
 /* Punctuation */
-%token DOT COMMA SEMICOLON E_COMM
+%token <sval> DOT COMMA SEMICOLON E_COMM ASSIGN
 /* Mathematical operators */
-%token ASSIGN
-%token ADD SUB TIMES DIVIDE INCR
+%token <operator>  ADD SUB TIMES DIVIDE INCR
 /* Relational and logical operators */
-%token EQOP RELOP AND OR NOT
+%token <operator> EQOP RELOP AND OR NOT
 /* Flow modifier keywords */
-%token IF ELSE FOR
+%token <sval> IF ELSE FOR
 /* I/O keywords */
-%token PRINTF SCANF
+%token <builtin> PRINTF SCANF
 /* Function and variable keywords */
-%token IDENTIFIER RETURN VOID INT FLOAT CHAR STRUCT
+%token <sval> IDENTIFIER RETURN
+%token <value_type> VOID INT FLOAT CHAR STRUCT
 /* Value keywords */
-%token ICONST FCONST CCONST STRCONST
+%token <sval> ICONST FCONST CCONST STRCONST
 
 /* Precedence rules */
 %nonassoc IFX
@@ -46,6 +56,14 @@
 %left TIMES DIVIDE
 %right NOT E_COMM REV
 %left DOT INCR O_ROUND_BRACES C_ROUND_BRACES O_SQUARE_BRACES C_SQUARE_BRACES
+
+%type <node> program body statements statement block
+%type <node> declarations declaration var_decl simple_declaration struct_declaration inizialization_list
+%type <node> functions func_definition argument_list parameter_list parameter_declaration func_call call_args
+%type <node> assignment expr increment return_stat
+%type <node> printf_stat printed_var scanf_stat retrieved_var
+%type <node> if_stat for_stat init_for incr_for
+%type <node> var_type identifier const word number
 
 %start program
 
@@ -462,6 +480,32 @@ word: CCONST
 /* Integer and float constant */
 number: ICONST
       | FCONST
+        {
+            $$ = new_AST_Const();
+        }
       ;
 
 %%
+void yyerror (const char *s)
+{
+    extern int yylineno;
+	extern char* yytext;
+	fprintf(stderr, "Error: %s\nLine: %d\nSymbol: %s\n", s, yylineno, yytext);
+}
+
+int main (void)
+{
+	// initialize symbol table
+//	init_hash_table();
+
+	int result = yyparse();
+	if(result==0) printf("\nCORRECT SYNTAX!\n");
+	else printf("\nWRONG SYNTAX!\n");
+
+	// symbol table dump
+/*	yyout = fopen("symtab_dump.out w");
+	symtab_dump(yyout);
+	fclose(yyout);	
+*/
+    return result;
+}

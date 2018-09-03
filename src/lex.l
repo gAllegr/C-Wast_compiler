@@ -13,9 +13,10 @@ Although disabling yywrap is certainly the best option, it may also be possible 
 	#include "../src/utils.h"
 
 	static inline void print_token() { printf("%s ", yytext); }
-	static inline void value_token() { yylval = strdup(yytext); }
+	static inline void value_token() { yylval.sval = strdup(yytext); }
 %}
 
+%option yylineno
 
 /* TOKEN DEFINITION BY USING REGULAR EXPRESSION */
 /* comment state definition */
@@ -41,12 +42,12 @@ id				{alpha}({alpha}|{digit}|{underscore})*
 "/*" 						BEGIN(comm);
 <comm>[^*/\n]* 				/* if not a '*' or new line, discard everything */
 <comm>"*"+[^*/\n]* 			/* discard '*' not warning for comment end and all next characters */
-<comm>\n 					{lineno += 1;} /* discard new lines */
+<comm>\n 					/* discard new lines */
 <comm>"*"+"/" 				BEGIN(INITIAL);
 
 "//"						BEGIN(line_comm);
 <line_comm>[^/\n]* 			/* if not a new line, discard everything */
-<line_comm>\n				{lineno += 1; BEGIN(INITIAL);}
+<line_comm>\n				{BEGIN(INITIAL);}
 
 "{"							{print_token(); value_token(); return O_CURLY_BRACES;}
 "}"							{print_token(); value_token(); return C_CURLY_BRACES;}
@@ -62,39 +63,39 @@ id				{alpha}({alpha}|{digit}|{underscore})*
 
 "="							{print_token(); value_token(); return ASSIGN;}
 
-"--"						{print_token(); value_token(); return INCR;}
-"++"						{print_token(); value_token(); return INCR;}
+"++"						{print_token(); yylval.operator = U_INC; return INCR;}
+"--"						{print_token(); yylval.operator = U_DEC; return INCR;}
 
-"+"							{print_token(); value_token(); return ADD;}
-"-"							{print_token(); value_token(); return SUB;}
-"*"							{print_token(); value_token(); return TIMES;}
-"/"							{print_token(); value_token(); return DIVIDE;}
+"+"							{print_token(); yylval.operator = B_ADD; return ADD;}
+"-"							{print_token(); yylval.operator = B_SUB; return SUB;}
+"*"							{print_token(); yylval.operator = B_MUL; return TIMES;}
+"/"							{print_token(); yylval.operator = B_DIV; return DIVIDE;}
 
-"=="						{print_token(); value_token(); return EQOP;}
-"!="						{print_token(); value_token(); return EQOP;}
-"<"							{print_token(); value_token(); return RELOP;}
-"<="						{print_token(); value_token(); return RELOP;}
-">"							{print_token(); value_token(); return RELOP;}
-">="						{print_token(); value_token(); return RELOP;}
+"=="						{print_token(); yylval.operator = B_EQ; return EQOP;}
+"!="						{print_token(); yylval.operator = B_NE; return EQOP;}
+"<"							{print_token(); yylval.operator = B_LT; return RELOP;}
+"<="						{print_token(); yylval.operator = B_LE; return RELOP;}
+">"							{print_token(); yylval.operator = B_GT; return RELOP;}
+">="						{print_token(); yylval.operator = B_GE; return RELOP;}
 
-"&&"						{print_token(); value_token(); return AND;}
-"||"						{print_token(); value_token(); return OR;}
-"!"							{print_token(); value_token(); return NOT;}
+"&&"						{print_token(); yylval.operator = B_AND; return AND;}
+"||"						{print_token(); yylval.operator = B_OR; return OR;}
+"!"							{print_token(); yylval.operator = U_NOT; return NOT;}
 
-"char"						{print_token(); value_token(); return CHAR;}
+"char"						{print_token(); yylval.value_type = T_CHAR; return CHAR;}
 "else"						{print_token(); value_token(); return ELSE;}
-"float"						{print_token(); value_token(); return FLOAT;}
+"float"						{print_token(); yylval.value_type = T_FLOAT; return FLOAT;}
 "for"						{print_token(); value_token(); return FOR;}
 "if"						{print_token(); value_token(); return IF;}
-"int"						{print_token(); value_token(); return INT;}
-"printf"					{print_token(); value_token(); return PRINTF;}
+"int"						{print_token(); yylval.value_type = T_INT; return INT;}
+"printf"					{print_token(); yylval.builtin = F_PRINTF; return PRINTF;}
 "return"					{print_token(); value_token(); return RETURN;}
-"scanf"						{print_token(); value_token(); return SCANF;}
-"struct"					{print_token(); value_token(); return STRUCT;}
-"void"						{print_token(); value_token(); return VOID;}
+"scanf"						{print_token(); yylval.builtin = F_SCANF; return SCANF;}
+"struct"					{print_token(); yylval.value_type = T_STRUCT; return STRUCT;}
+"void"						{print_token(); yylval.value_type = T_VOID; return VOID;}
 
 {ws}						{/* ignore it */}
-"\n"						{print_token(); lineno += 1;}
+"\n"						{print_token();}
 
 {header}					{/* ignore it */}
 {id}						{print_token(); value_token(); return IDENTIFIER;}
