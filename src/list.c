@@ -63,3 +63,13 @@ void *list_get(List *list, int index) {
     return list->items[index];
 }
 
+List *list_merge(List *first_list, List *second_list) {
+    int size = list_length(second_list), i;
+    for(i=0;i<size;i++)
+    {
+        void *item = list_get(second_list, i);
+        list_append(first_list, item);
+    }
+
+    return first_list;
+}

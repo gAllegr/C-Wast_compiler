@@ -19,7 +19,7 @@ AST *new_AST_Const(ValType type, char *value)
             ast_const->fval = atof(value);
             break;
         case T_CHAR:
-            ast_const->cval = value;
+            ast_const->sval = value;
             break;
     }
 
@@ -30,29 +30,16 @@ AST *new_AST_Const(ValType type, char *value)
     return ast;
 }
 
-AST *new_AST_Variable(char *name, int n)
+AST *new_AST_Variable (char *name, int n, ValType type)
 {
     AST_Variable *ast_variable = malloc(sizeof(AST_Variable));
     ast_variable->name = name;
     ast_variable->n = n;
+    ast_variable->type = type;
 
     AST *ast = malloc(sizeof(AST));
     ast->type = N_VARIABLE;
     ast->ast_variable = ast_variable;
-
-    return ast;
-}
-
-AST *new_AST_Dec_Variable (char *name, int n, ValType type, AST *init_value)
-{
-    AST_Dec_Variable *ast_dec_variable = malloc(sizeof(AST_Dec_Variable));
-    ast_dec_variable->var_name = new_AST_Variable(name,n);
-    ast_dec_variable->type = type;
-    ast_dec_variable->init_value = init_value;
-
-    AST *ast = malloc(sizeof(AST));
-    ast->type = N_DEC_VARIABLE;
-    ast->ast_dec_variable = ast_dec_variable;
 
     return ast;
 }
@@ -70,12 +57,12 @@ AST *new_AST_Unary_Expr (UnaryExprType unary_type, AST *expression)
     return ast;
 }
 
-AST *new_AST_Binary_Expr (BinaryExprType binary_type, AST *right, AST *left)
+AST *new_AST_Binary_Expr (BinaryExprType binary_type, AST *left, AST *right)
 {
     AST_Binary_Expr *ast_binary_expr = malloc(sizeof(AST_Binary_Expr));
     ast_binary_expr->binary_type = binary_type;
-    ast_binary_expr->right = right;
     ast_binary_expr->left = left;
+    ast_binary_expr->right = right;
 
     AST *ast = malloc(sizeof(AST));
     ast->type = N_BINARY_EXPR;
@@ -111,7 +98,7 @@ AST *new_AST_If_Stat (AST *condition, AST *then_branch, AST *else_branch)
     return ast;
 }
 
-AST *new_AST_For_Stat (AST *init, AST *condition, AST *increment, AST *loop)
+AST *new_AST_For_Stat (List *init, AST *condition, List *increment, AST *loop)
 {
     AST_For_Stat *ast_for = malloc(sizeof(AST_For_Stat));
     ast_for->init = init;
@@ -138,7 +125,7 @@ AST *new_AST_Return_Stat (AST *expression)
     return ast;
 }
 
-AST *new_AST_Builtin_Stat (BuiltinFunction function, AST *content, AST *variables)
+AST *new_AST_Builtin_Stat (BuiltinFunction function, AST *content, List *variables)
 {
     AST_Builtin_Stat *ast_builtin = malloc(sizeof(AST_Builtin_Stat));
     ast_builtin->function = function;
@@ -152,26 +139,14 @@ AST *new_AST_Builtin_Stat (BuiltinFunction function, AST *content, AST *variable
     return ast;
 }
 
-AST *new_AST_Parameters (List *parameters)
+AST *new_AST_List (List *list)
 {
-    AST_Parameters *ast_param = malloc(sizeof(AST_Parameters));
-    ast_param->parameters = parameters;
+    AST_List *ast_list = malloc(sizeof(AST_List));
+    ast_list->list = list;
 
     AST *ast = malloc(sizeof(AST));
-    ast->type = N_PARAMETERS;
-    ast->ast_parameters = parameters;
-
-    return ast;
-}
-
-AST *new_AST_Statements (List *statements)
-{
-    AST_Statements *ast_statements = malloc(sizeof(AST_Statements));
-    ast_statements->statements = statements;
-
-    AST *ast = malloc(sizeof(AST));
-    ast->type = N_STATEMENTS;
-    ast->ast_statements = statements;
+    ast->type = N_LIST;
+    ast->ast_list = list;
 
     return ast;
 }
@@ -190,19 +165,7 @@ AST *new_AST_Def_Function (AST *func_name, AST *parameters, AST *body)
     return ast;
 }
 
-AST *new_AST_Arguments (List *arguments)
-{
-    AST_Arguments *ast_args = malloc(sizeof(AST_Arguments));
-    ast_args->arguments = arguments;
-
-    AST *ast = malloc(sizeof(AST));
-    ast->type = N_ARGUMENTS;
-    ast->ast_arguments = ast_args;
-
-    return ast;
-}
-
-AST *new_AST_Call_Function (AST *func_name, AST *arguments)
+AST *new_AST_Call_Function (AST *func_name, List *arguments)
 {
     AST_Call_Function *ast_call_func = malloc(sizeof(AST_Call_Function));
     ast_call_func->func_name = func_name;
@@ -215,31 +178,7 @@ AST *new_AST_Call_Function (AST *func_name, AST *arguments)
     return ast;
 }
 
-AST *new_AST_List_Function (List *functions)
-{
-    AST_List_Function *ast_list_func = malloc(sizeof(AST_List_Function));
-    ast_list_func->functions = functions;
-
-    AST *ast = malloc(sizeof(AST));
-    ast->type = N_LIST_FUNCTION;
-    ast->ast_list_function = ast_list_func;
-
-    return ast;
-}
-
-AST *new_AST_List_Declaration (List *declaration)
-{
-    AST_List_Declaration *ast_list_decl = malloc(sizeof(AST_List_Declaration));
-    ast_list_decl->declaration = declaration;
-
-    AST *ast = malloc(sizeof(AST));
-    ast->type = N_LIST_DECLARATION;
-    ast->ast_list_declaration;
-
-    return ast;
-}
-
-AST *new_AST_Body (AST *declarations, AST *statements)
+AST *new_AST_Body (List *declarations, List *statements)
 {
     AST_Body *ast_body = malloc(sizeof(AST_Body));
     ast_body->declarations = declarations;
@@ -252,7 +191,7 @@ AST *new_AST_Body (AST *declarations, AST *statements)
     return ast;
 }
 
-AST *new_AST_Root (AST *global_declaration, AST *functions)
+AST *new_AST_Root (List *global_declaration, List *functions)
 {
     AST_Root *ast_root = malloc(sizeof(AST_Root));
     ast_root->global_declaration = global_declaration;

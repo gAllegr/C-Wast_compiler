@@ -15,5 +15,6 @@ void list_append(List *list, void *item);
 void list_push(List *list, void *item);
 void *list_pop(List *list);
 void *list_get(List *list, int index);
+List *list_merge(List *first_list, List *second_list);
 
 #endif
