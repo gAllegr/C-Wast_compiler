@@ -11,6 +11,8 @@ Although disabling yywrap is certainly the best option, it may also be possible 
 	#include <stdlib.h>
 	#include <string.h>
 	#include "../src/utils.h"
+    #include "../src/ast.h"
+    #include "../src/list.h"
 
 	static inline void print_token() { printf("%s ", yytext); }
 	static inline void value_token() { yylval.sval = strdup(yytext); }

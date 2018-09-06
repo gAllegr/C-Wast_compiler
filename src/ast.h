@@ -132,17 +132,17 @@ typedef struct AST_Def_Function {
 
 typedef struct AST_Call_Function {
     AST *func_name;     /* AST_Variable */
-    List *arguments;     /* AST_Arguments */
+    List *arguments;
 } AST_Call_Function;
 
 typedef struct AST_Body {
-    List *declarations;      /* AST_List_Declaration */
-    List *statements;        /* AST_Statements */
+    List *declarations;
+    List *statements;
 } AST_Body;
 
 typedef struct AST_Root {
-    List *global_declaration;      /* AST_List_Declaration */
-    List *functions;      /* AST_List_Function */
+    List *global_declaration;
+    List *functions;
 } AST_Root;
 
 /* Define Abstract Syntax Tree structure */
@@ -181,5 +181,8 @@ AST *new_AST_Def_Function (AST *func_name, AST *parameters, AST *body);
 AST *new_AST_Call_Function (AST *func_name, List *arguments);
 AST *new_AST_Body (List *declarations, List *statements);
 AST *new_AST_Root (List *global_declaration, List *functions);
+
+void free_ast(AST *ast);
+void print_ast(AST *ast, int indent);
 
 #endif

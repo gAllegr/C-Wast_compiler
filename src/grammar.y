@@ -23,6 +23,9 @@
         int value_type;
     } yystype;
     #define YYSTYPE yystype;
+
+    // Abstract Syntax Tree
+    AST *ast;
 %}
 
 /* BISON DECLARATION */
@@ -75,11 +78,13 @@
 C language is a procedural language, it only allows declarations and functions */
 program: functions
             {
-                $$ = new_AST_Root(list_new, $2);
+                ast = new_AST_Root(list_new(), $1);
+                $$ = ast;
             }   
         | declarations functions
             {
-                $$ = new_AST_Root($1, $2);
+                ast = new_AST_Root($1, $2);
+                $$ = ast;
             }
         ;
 
@@ -106,6 +111,7 @@ declaration: var_type var_decl SEMICOLON
                                 obj->ast_assign->variable->type = $1;
                                 break;
                         }
+                        $2->items[i] = obj;
                     }
                     // associate updated list at head of rule
                     $$ = $2;
@@ -169,8 +175,9 @@ inizialization_list: identifier
                    | O_CURLY_BRACES inizialization_list COMMA inizialization_list C_CURLY_BRACES
                         {
                             list_merge($2,$4);
+                            AST *init = new_AST_List($2);
                             List *array_el = list_new();
-                            list_append(array_el,$2);
+                            list_append(array_el,init);
                             $$ = array_el;
                         }
                    | inizialization_list COMMA inizialization_list
@@ -410,15 +417,13 @@ scanf_stat: SCANF O_ROUND_BRACES STRCONST COMMA retrieved_var C_ROUND_BRACES
 /* Recursion allows to retrieve more than one value with a single scanf instruction */
 retrieved_var: E_COMM identifier
                 {
-                    char* item = concat(2,$1,$2);
                     List *retr_var = list_new();
-                    list_append(retr_var, item);
+                    list_append(retr_var, $2);
                     $$ = retr_var;
                 }
               | retrieved_var COMMA E_COMM identifier
                 {
-                    char* item = concat(2,$3,$4);
-                    list_append($1,item);
+                    list_append($1,$4);
                     $$ = $1;
                 }
               ;
@@ -592,7 +597,12 @@ int main (void)
     //	init_hash_table();
 
 	int result = yyparse();
-	if(result==0) printf("\nCORRECT SYNTAX!\n");
+	if(result==0)
+    {
+        printf("\nCORRECT SYNTAX!\n");
+        print_ast(ast,0);
+        free_ast(ast);
+    }
 	else printf("\nWRONG SYNTAX!\n");
 
 	// symbol table dump
@@ -600,5 +610,6 @@ int main (void)
 	symtab_dump(yyout);
 	fclose(yyout);	
     */
+
     return result;
 }
