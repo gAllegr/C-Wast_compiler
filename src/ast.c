@@ -3,6 +3,8 @@
 #include "ast.h"
 #include "list.h"
 
+/* ===== Functions to build AST nodes ===== */
+
 AST *new_AST_Const(ValType type, char *value)
 {
     AST_Const *ast_const = malloc(sizeof(AST_Const));
@@ -200,20 +202,7 @@ AST *new_AST_Root (List *global_declaration, List *functions)
     return ast; 
 }
 
-void free_ast_list(List *ast_list)
-{
-    // if list empty
-    if(ast_list == NULL) return;
-
-    // if list has elements, free every element
-    for(int i=0; i<list_length(ast_list); i++)
-    {
-        free_ast(ast_list->items[i]);
-    }
-
-    // at the end, free the list itself
-    list_free(ast_list);
-}
+/* ===== Function to get AST nodes types as string ===== */
 
 char *ast_type_name(AST *ast)
 {
@@ -346,11 +335,33 @@ char *ast_type_name(AST *ast)
     }
 }
 
+
+/* ===== Functions to free AST nodes ===== */
+
+void free_ast_list(List *ast_list)
+{
+    // if list empty
+    if(ast_list == NULL) return;
+
+    // if list has elements, free every element
+    for(int i=0; i<list_length(ast_list); i++)
+    {
+        free_ast(list_get(ast_list,i));
+    }
+
+    // at the end, free the list itself
+    free(ast_list);
+}
+
+
 void free_ast(AST *ast)
 {
+    // if node empty
+    if(ast == NULL) return;
+
     switch(ast->type) {
         case N_CONSTANT:
-            free(ast->ast_constant->sval);
+            if(ast->ast_constant->type == T_CHAR) free(ast->ast_constant->sval);
             free(ast->ast_constant);
             break;
         case N_VARIABLE:
@@ -425,6 +436,8 @@ void free_ast(AST *ast)
 
     free(ast);
 }
+
+/* ===== Function to print AST nodes ===== */
 
 void print_ast(AST *ast, int indent)
 {

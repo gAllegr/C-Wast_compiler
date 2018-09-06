@@ -10,10 +10,7 @@ typedef struct List {
 /* === List functions === */
 List *list_new(void);
 int list_length(List *list);
-void list_free(List *list);
 void list_append(List *list, void *item);
-void list_push(List *list, void *item);
-void *list_pop(List *list);
 void *list_get(List *list, int index);
 List *list_merge(List *first_list, List *second_list);
 

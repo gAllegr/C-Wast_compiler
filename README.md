@@ -150,7 +150,74 @@ Examples: `int main ()` or `void main (void)`
 * Support returning of variables
 
 ## Syntax Tree
-**Next step!!!**
+We decided to build and use an Abstract Syntax Tree.<br>
+We build a particular node of AST for almost all non-terminals.<br>
+AST is built during the parsing phase and, after that, it's printed out! <br>
+Before exiting, the memory is released.
+
+_Example code_
+
+    int sum(int a, int b) {
+      int s = a + b;
+      return s;
+    }
+
+    int main ()
+    {
+      int c = 1, d = 2, somma;
+      somma = sum(c,d);
+
+      return 0;
+    }
+
+_Printed Tree_
+
+    Program GLOBAL DECLARATIONS
+    Program FUNCTIONS
+        Function Definition NAME
+            VARIABLE (INT type) sum
+        Function Definition PARAMETERS
+            List
+                VARIABLE (INT type) a
+                VARIABLE (INT type) b
+        Function Definition BODY
+            Function Body DECLARATIONS
+                Assignment VARIABLE
+                    VARIABLE (INT type) s
+                Assignment EXPRESSION
+                    BinaryExpr (Addition) LEFT
+                        VARIABLE (Unknown type) a
+                    BinaryExpr (Addition) RIGHT
+                        VARIABLE (Unknown type) b
+            Function Body STATEMENTS
+                Return_Statement
+                    VARIABLE (Unknown type) s
+        Function Definition NAME
+            VARIABLE (INT type) main
+        Function Definition PARAMETERS
+
+        Function Definition BODY
+            Function Body DECLARATIONS
+                Assignment VARIABLE
+                    VARIABLE (INT type) c
+                Assignment EXPRESSION
+                    INT_CONSTANT 1
+                Assignment VARIABLE
+                    VARIABLE (INT type) d
+                Assignment EXPRESSION
+                    INT_CONSTANT 2
+                VARIABLE (INT type) somma
+            Function Body STATEMENTS
+                Assignment VARIABLE
+                    VARIABLE (Unknown type) somma
+                Assignment EXPRESSION
+                    Function Call NAME
+                        VARIABLE (Unknown type) sum
+                    Function Call ARGUMENTS
+                        VARIABLE (Unknown type) c
+                        VARIABLE (Unknown type) d
+                Return_Statement
+                    INT_CONSTANT 0
 
 ## Symbol Table
 **Next next step!!!**<br>

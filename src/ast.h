@@ -17,7 +17,7 @@ typedef enum AstType {
     N_LIST,
     N_DEF_FUNCTION,         /* function definition */
     N_CALL_FUNCTION,        /* function call */
-    N_BODY,                  /* body of program */
+    N_BODY,                 /* body of program */
     N_ROOT                  /* list of global variables and functions */
 } AstType;
 
@@ -125,8 +125,8 @@ typedef struct AST_List {
 } AST_List;
 
 typedef struct AST_Def_Function {
-    AST *func_name;     /* AST_Dec_Variable */
-    AST *parameters;    /* AST_Parameters */
+    AST *func_name;     /* AST_Variable */
+    AST *parameters;    /* AST_List */
     AST *body;          /* AST_Body */
 } AST_Def_Function;
 

@@ -78,7 +78,7 @@
 	int yylex();
     void yyerror (const char *s);
     /* Variable needed for debugging */
-	//int yydebug = 1;
+//	int yydebug = 1;
 
     // Abstract Syntax Tree
     AST *ast;
@@ -1454,13 +1454,13 @@ yyreduce:
                     int size = list_length((yyvsp[-1].list)),i;
                     // update variable nodes with associated type
                     for(i=0;i<size;i++) {
-                        AST *obj = (yyvsp[-1].list)->items[i];
+                        AST *obj = list_get((yyvsp[-1].list),i);
                         switch(obj->type) {
                             case N_VARIABLE:
                                 obj->ast_variable->type = (yyvsp[-2].value_type);
                                 break;
                             case N_ASSIGNMENT:
-                                obj->ast_assign->variable->type = (yyvsp[-2].value_type);
+                                obj->ast_assign->variable->ast_variable->type = (yyvsp[-2].value_type);
                                 break;
                         }
                         (yyvsp[-1].list)->items[i] = obj;
@@ -1593,7 +1593,7 @@ yyreduce:
   case 21:
 #line 206 "./src/grammar.y" /* yacc.c:1646  */
     {
-                        (yyvsp[-6].node)->type = (yyvsp[-7].value_type);
+                        (yyvsp[-6].node)->ast_variable->type = (yyvsp[-7].value_type);
                         (yyval.node) = new_AST_Def_Function((yyvsp[-6].node), (yyvsp[-4].node), (yyvsp[-1].node));
                     }
 #line 1600 "grammar.tab.c" /* yacc.c:1646  */
@@ -1641,7 +1641,7 @@ yyreduce:
   case 27:
 #line 237 "./src/grammar.y" /* yacc.c:1646  */
     {
-                            (yyvsp[0].node)->type = (yyvsp[-1].value_type);
+                            (yyvsp[0].node)->ast_variable->type = (yyvsp[-1].value_type);
                             (yyval.node) = (yyvsp[0].node);
                         }
 #line 1648 "grammar.tab.c" /* yacc.c:1646  */
@@ -2356,11 +2356,14 @@ int main (void)
 	int result = yyparse();
 	if(result==0)
     {
-        printf("\nCORRECT SYNTAX!\n");
-        print_ast(ast,0);
+        printf("\nCORRECT SYNTAX! \\^.^/ \n");
+        printf("Now I'll print the abstract syntax tree! :P\n\n");
+        print_ast(ast,0); printf("\n");
+        printf("Now I'll free memory occupied by abstract syntax tree!\n");
         free_ast(ast);
+        printf("Memory is free!\n\n");
     }
-	else printf("\nWRONG SYNTAX!\n");
+	else printf("\nWRONG SYNTAX! ç.ç\n");
 
 	// symbol table dump
     /*	yyout = fopen("symtab_dump.out w");

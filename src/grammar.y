@@ -13,7 +13,7 @@
 	int yylex();
     void yyerror (const char *s);
     /* Variable needed for debugging */
-	//int yydebug = 1;
+//	int yydebug = 1;
 
     // Abstract Syntax Tree
     AST *ast;
@@ -103,13 +103,13 @@ declaration: var_type var_decl SEMICOLON
                     int size = list_length($2),i;
                     // update variable nodes with associated type
                     for(i=0;i<size;i++) {
-                        AST *obj = $2->items[i];
+                        AST *obj = list_get($2,i);
                         switch(obj->type) {
                             case N_VARIABLE:
                                 obj->ast_variable->type = $1;
                                 break;
                             case N_ASSIGNMENT:
-                                obj->ast_assign->variable->type = $1;
+                                obj->ast_assign->variable->ast_variable->type = $1;
                                 break;
                         }
                         $2->items[i] = obj;
@@ -204,7 +204,7 @@ functions: func_definition
 /* Function definition */
 func_definition: var_type identifier O_ROUND_BRACES argument_list C_ROUND_BRACES O_CURLY_BRACES body C_CURLY_BRACES
                     {
-                        $2->type = $1;
+                        $2->ast_variable->type = $1;
                         $$ = new_AST_Def_Function($2, $4, $7);
                     }
                ;
@@ -235,7 +235,7 @@ parameter_list: parameter_declaration
 /* Single parameter within definition can be a variable type, or a variable type followed by the identifier */
 parameter_declaration: var_type identifier
                         {
-                            $2->type = $1;
+                            $2->ast_variable->type = $1;
                             $$ = $2;
                         }
                      ;
@@ -600,11 +600,17 @@ int main (void)
 	int result = yyparse();
 	if(result==0)
     {
-        printf("\nCORRECT SYNTAX!\n");
-        print_ast(ast,0);
+        printf("\nCORRECT SYNTAX! \\^.^/ \n");
+        printf("Now I'll print the abstract syntax tree! :P\n\n");
+        print_ast(ast,0); printf("\n");
+
+        /* other stuff must be added */
+
+        printf("Now I'll free memory occupied by abstract syntax tree!\n");
         free_ast(ast);
+        printf("Memory is free!\n\n");
     }
-	else printf("\nWRONG SYNTAX!\n");
+	else printf("\nWRONG SYNTAX! ç.ç\n");
 
 	// symbol table dump
     /*	yyout = fopen("symtab_dump.out w");

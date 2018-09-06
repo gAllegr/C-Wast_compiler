@@ -15,8 +15,6 @@ Although disabling yywrap is certainly the best option, it may also be possible 
 	#include "grammar.tab.h"
 
 	extern void yyerror (const char *s);
-
-	static inline void print_token() { printf("%s ", yytext); }
 	static inline void value_token() { yylval.sval = strdup(yytext); }
 %}
 
@@ -53,62 +51,62 @@ id				{alpha}({alpha}|{digit}|{underscore})*
 <line_comm>[^/\n]* 			/* if not a new line, discard everything */
 <line_comm>\n				{BEGIN(INITIAL);}
 
-"{"							{print_token(); value_token(); return O_CURLY_BRACES;}
-"}"							{print_token(); value_token(); return C_CURLY_BRACES;}
-"["							{print_token(); value_token(); return O_SQUARE_BRACES;}
-"]"							{print_token(); value_token(); return C_SQUARE_BRACES;}
-"("							{print_token(); value_token(); return O_ROUND_BRACES;}
-")"							{print_token(); value_token(); return C_ROUND_BRACES;}
+"{"							{value_token(); return O_CURLY_BRACES;}
+"}"							{value_token(); return C_CURLY_BRACES;}
+"["							{value_token(); return O_SQUARE_BRACES;}
+"]"							{value_token(); return C_SQUARE_BRACES;}
+"("							{value_token(); return O_ROUND_BRACES;}
+")"							{value_token(); return C_ROUND_BRACES;}
 
-"."							{print_token(); value_token(); return DOT;}
-","							{print_token(); value_token(); return COMMA;}
-";"							{print_token(); value_token(); return SEMICOLON;}
-"&"							{print_token(); value_token(); return E_COMM;}
+"."							{value_token(); return DOT;}
+","							{value_token(); return COMMA;}
+";"							{value_token(); return SEMICOLON;}
+"&"							{value_token(); return E_COMM;}
 
-"="							{print_token(); value_token(); return ASSIGN;}
+"="							{value_token(); return ASSIGN;}
 
-"++"						{print_token(); yylval.operator = U_INC; return INCR;}
-"--"						{print_token(); yylval.operator = U_DEC; return INCR;}
+"++"						{yylval.operator = U_INC; return INCR;}
+"--"						{yylval.operator = U_DEC; return INCR;}
 
-"+"							{print_token(); yylval.operator = B_ADD; return ADD;}
-"-"							{print_token(); yylval.operator = B_SUB; return SUB;}
-"*"							{print_token(); yylval.operator = B_MUL; return TIMES;}
-"/"							{print_token(); yylval.operator = B_DIV; return DIVIDE;}
+"+"							{yylval.operator = B_ADD; return ADD;}
+"-"							{yylval.operator = B_SUB; return SUB;}
+"*"							{yylval.operator = B_MUL; return TIMES;}
+"/"							{yylval.operator = B_DIV; return DIVIDE;}
 
-"=="						{print_token(); yylval.operator = B_EQ; return EQOP;}
-"!="						{print_token(); yylval.operator = B_NE; return EQOP;}
-"<"							{print_token(); yylval.operator = B_LT; return RELOP;}
-"<="						{print_token(); yylval.operator = B_LE; return RELOP;}
-">"							{print_token(); yylval.operator = B_GT; return RELOP;}
-">="						{print_token(); yylval.operator = B_GE; return RELOP;}
+"=="						{yylval.operator = B_EQ; return EQOP;}
+"!="						{yylval.operator = B_NE; return EQOP;}
+"<"							{yylval.operator = B_LT; return RELOP;}
+"<="						{yylval.operator = B_LE; return RELOP;}
+">"							{yylval.operator = B_GT; return RELOP;}
+">="						{yylval.operator = B_GE; return RELOP;}
 
-"&&"						{print_token(); yylval.operator = B_AND; return AND;}
-"||"						{print_token(); yylval.operator = B_OR; return OR;}
-"!"							{print_token(); yylval.operator = U_NOT; return NOT;}
+"&&"						{yylval.operator = B_AND; return AND;}
+"||"						{yylval.operator = B_OR; return OR;}
+"!"							{yylval.operator = U_NOT; return NOT;}
 
-"char"						{print_token(); yylval.value_type = T_CHAR; return CHAR;}
-"else"						{print_token(); value_token(); return ELSE;}
-"float"						{print_token(); yylval.value_type = T_FLOAT; return FLOAT;}
-"for"						{print_token(); value_token(); return FOR;}
-"if"						{print_token(); value_token(); return IF;}
-"int"						{print_token(); yylval.value_type = T_INT; return INT;}
-"printf"					{print_token(); yylval.builtin = F_PRINTF; return PRINTF;}
-"return"					{print_token(); value_token(); return RETURN;}
-"scanf"						{print_token(); yylval.builtin = F_SCANF; return SCANF;}
-"struct"					{print_token(); yylval.value_type = T_STRUCT; return STRUCT;}
-"void"						{print_token(); yylval.value_type = T_VOID; return VOID;}
+"char"						{yylval.value_type = T_CHAR; return CHAR;}
+"else"						{value_token(); return ELSE;}
+"float"						{yylval.value_type = T_FLOAT; return FLOAT;}
+"for"						{value_token(); return FOR;}
+"if"						{value_token(); return IF;}
+"int"						{yylval.value_type = T_INT; return INT;}
+"printf"					{yylval.builtin = F_PRINTF; return PRINTF;}
+"return"					{value_token(); return RETURN;}
+"scanf"						{yylval.builtin = F_SCANF; return SCANF;}
+"struct"					{yylval.value_type = T_STRUCT; return STRUCT;}
+"void"						{yylval.value_type = T_VOID; return VOID;}
 
 {ws}						{/* ignore it */}
-"\n"						{print_token();}
+"\n"						{/* ignore it */}
 
 {header}					{/* ignore it */}
-{id}						{print_token(); value_token(); return IDENTIFIER;}
+{id}						{value_token(); return IDENTIFIER;}
 
-{digit}+					{print_token(); value_token(); return ICONST;}
-{digit}+\.{digit}+			{print_token(); value_token(); return FCONST;}
-{digit}+(\.{digit}+)?{exp}	{print_token(); value_token(); return FCONST;}
-{char}						{print_token(); value_token(); return CCONST;}
-{string}					{print_token(); value_token(); return STRCONST;}
+{digit}+					{value_token(); return ICONST;}
+{digit}+\.{digit}+			{value_token(); return FCONST;}
+{digit}+(\.{digit}+)?{exp}	{value_token(); return FCONST;}
+{char}						{value_token(); return CCONST;}
+{string}					{value_token(); return STRCONST;}
 
 .               			{yyerror("Unrecognized character");}
 
