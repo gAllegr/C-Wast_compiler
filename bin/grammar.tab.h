@@ -82,14 +82,29 @@ extern int yydebug;
     FCONST = 292,
     CCONST = 293,
     STRCONST = 294,
-    REV = 295,
-    IFX = 296
+    IFX = 295,
+    REV = 296
   };
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+
+union YYSTYPE
+{
+#line 23 "./src/grammar.y" /* yacc.c:1909  */
+
+    char *sval;
+    List *list;
+    AST *node;
+    int operator;
+    int builtin;
+    int value_type;
+
+#line 105 "grammar.tab.h" /* yacc.c:1909  */
+};
+
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif

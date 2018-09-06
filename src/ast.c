@@ -116,7 +116,7 @@ AST *new_AST_Return_Stat (AST *expression)
 
     AST *ast = malloc(sizeof(AST));
     ast->type = N_RETURN_STATEMENT;
-    ast->ast_return_stat = expression;
+    ast->ast_return_stat = ast_return;
 
     return ast;
 }
@@ -142,7 +142,7 @@ AST *new_AST_List (List *list)
 
     AST *ast = malloc(sizeof(AST));
     ast->type = N_LIST;
-    ast->ast_list = list;
+    ast->ast_list = ast_list;
 
     return ast;
 }
@@ -213,85 +213,6 @@ void free_ast_list(List *ast_list)
 
     // at the end, free the list itself
     list_free(ast_list);
-}
-
-void free_ast(AST *ast)
-{
-    switch(ast->type) {
-        case N_CONSTANT:
-            free(ast->ast_constant->sval);
-            free(ast->ast_constant);
-            break;
-        case N_VARIABLE:
-            free(ast->ast_variable->name);
-            free(ast->ast_variable);
-            break;
-        case N_UNARY_EXPR:
-            free_ast(ast->ast_unary_expr->expression);
-            free(ast->ast_unary_expr);
-            break;
-        case N_BINARY_EXPR:
-            free_ast(ast->ast_binary_expr->left);
-            free_ast(ast->ast_binary_expr->right);
-            free(ast->ast_binary_expr);
-            break;
-        case N_ASSIGNMENT:
-            free_ast(ast->ast_assign->variable);
-            free_ast(ast->ast_assign->expression);
-            free(ast->ast_assign);
-            break;
-        case N_IF_STATEMENT:
-            free_ast(ast->ast_if_stat->condition);
-            free_ast(ast->ast_if_stat->then_branch);
-            free_ast(ast->ast_if_stat->else_branch);
-            free(ast->ast_if_stat);
-            break;
-        case N_FOR_STATEMENT:
-            free_ast_list(ast->ast_for_stat->init);
-            free_ast(ast->ast_for_stat->condition);
-            free_ast_list(ast->ast_for_stat->increment);
-            free_ast(ast->ast_for_stat->loop);
-            free(ast->ast_for_stat);
-            break;
-        case N_RETURN_STATEMENT:
-            free_ast(ast->ast_return_stat->expression);
-            free(ast->ast_return_stat);
-            break;
-        case N_BUILTIN_STATEMENT:
-            free_ast(ast->ast_builtin_stat->content);
-            free_ast_list(ast->ast_builtin_stat->variables);
-            free(ast->ast_builtin_stat);
-            break;
-        case N_LIST:
-            free_ast_list(ast->ast_list->list);
-            free_ast(ast->ast_list);
-            break;
-        case N_DEF_FUNCTION:
-            free_ast(ast->ast_def_function->func_name);
-            free_ast(ast->ast_def_function->parameters);
-            free_ast(ast->ast_def_function->body);
-            free(ast->ast_def_function);
-            break;
-        case N_CALL_FUNCTION:
-            free_ast(ast->ast_call_function->func_name);
-            free_ast_list(ast->ast_call_function->arguments);
-            free(ast->ast_call_function);
-            break;
-        case N_BODY:
-            free_ast_list(ast->ast_body->declarations);
-            free_ast_list(ast->ast_body->statements);
-            break;
-        case N_ROOT:
-            free_ast_list(ast->ast_root->global_declaration);
-            free_ast_list(ast->ast_root->functions);
-            free(ast->ast_root);
-            break;
-        default:
-            printf("Could not free syntax tree with type: %s", ast->type);
-            exit(EXIT_FAILURE);
-    }
-
-    free(ast);
 }
 
 char *ast_type_name(AST *ast)
@@ -425,6 +346,86 @@ char *ast_type_name(AST *ast)
     }
 }
 
+void free_ast(AST *ast)
+{
+    switch(ast->type) {
+        case N_CONSTANT:
+            free(ast->ast_constant->sval);
+            free(ast->ast_constant);
+            break;
+        case N_VARIABLE:
+            free(ast->ast_variable->name);
+            free(ast->ast_variable);
+            break;
+        case N_UNARY_EXPR:
+            free_ast(ast->ast_unary_expr->expression);
+            free(ast->ast_unary_expr);
+            break;
+        case N_BINARY_EXPR:
+            free_ast(ast->ast_binary_expr->left);
+            free_ast(ast->ast_binary_expr->right);
+            free(ast->ast_binary_expr);
+            break;
+        case N_ASSIGNMENT:
+            free_ast(ast->ast_assign->variable);
+            free_ast(ast->ast_assign->expression);
+            free(ast->ast_assign);
+            break;
+        case N_IF_STATEMENT:
+            free_ast(ast->ast_if_stat->condition);
+            free_ast(ast->ast_if_stat->then_branch);
+            free_ast(ast->ast_if_stat->else_branch);
+            free(ast->ast_if_stat);
+            break;
+        case N_FOR_STATEMENT:
+            free_ast_list(ast->ast_for_stat->init);
+            free_ast(ast->ast_for_stat->condition);
+            free_ast_list(ast->ast_for_stat->increment);
+            free_ast(ast->ast_for_stat->loop);
+            free(ast->ast_for_stat);
+            break;
+        case N_RETURN_STATEMENT:
+            free_ast(ast->ast_return_stat->expression);
+            free(ast->ast_return_stat);
+            break;
+        case N_BUILTIN_STATEMENT:
+            free_ast(ast->ast_builtin_stat->content);
+            free_ast_list(ast->ast_builtin_stat->variables);
+            free(ast->ast_builtin_stat);
+            break;
+        case N_LIST:
+            free_ast_list(ast->ast_list->list);
+            free(ast->ast_list);
+            break;
+        case N_DEF_FUNCTION:
+            free_ast(ast->ast_def_function->func_name);
+            free_ast(ast->ast_def_function->parameters);
+            free_ast(ast->ast_def_function->body);
+            free(ast->ast_def_function);
+            break;
+        case N_CALL_FUNCTION:
+            free_ast(ast->ast_call_function->func_name);
+            free_ast_list(ast->ast_call_function->arguments);
+            free(ast->ast_call_function);
+            break;
+        case N_BODY:
+            free_ast_list(ast->ast_body->declarations);
+            free_ast_list(ast->ast_body->statements);
+            free(ast->ast_body);
+            break;
+        case N_ROOT:
+            free_ast_list(ast->ast_root->global_declaration);
+            free_ast_list(ast->ast_root->functions);
+            free(ast->ast_root);
+            break;
+        default:
+            printf("Could not free syntax tree with type: %s", ast_type_name(ast));
+            exit(EXIT_FAILURE);
+    }
+
+    free(ast);
+}
+
 void print_ast(AST *ast, int indent)
 {
     // print indent
@@ -436,58 +437,58 @@ void print_ast(AST *ast, int indent)
         case N_CONSTANT:
             switch(ast->ast_constant->type) {
                 case T_INT:
-                    printf("%s %d\n", ast_type_name(ast->ast_constant), ast->ast_constant->ival);
+                    printf("%s %d\n", ast_type_name(ast), ast->ast_constant->ival);
                     break;
                 case T_FLOAT:
-                    printf("%s %f\n", ast_type_name(ast->ast_constant), ast->ast_constant->fval);
+                    printf("%s %f\n", ast_type_name(ast), ast->ast_constant->fval);
                     break;
                 case T_CHAR:
-                    printf("%s %s\n", ast_type_name(ast->ast_constant), ast->ast_constant->sval);
+                    printf("%s %s\n", ast_type_name(ast), ast->ast_constant->sval);
                     break;
             }
             break;
         case N_VARIABLE:
             if(ast->ast_variable->n==-1)
-                printf("%s %s\n", ast_type_name(ast->ast_variable), ast->ast_variable->name);
+                printf("%s %s\n", ast_type_name(ast), ast->ast_variable->name);
             else
-                printf("%s %s[%d]\n", ast_type_name(ast->ast_variable), ast->ast_variable->name, ast->ast_variable->n);
+                printf("%s %s[%d]\n", ast_type_name(ast), ast->ast_variable->name, ast->ast_variable->n);
             break;
         case N_UNARY_EXPR:
-            printf("%s\n", ast_type_name(ast->ast_unary_expr));
+            printf("%s\n", ast_type_name(ast));
             print_ast(ast->ast_unary_expr->expression,indent+4);
             break;
         case N_BINARY_EXPR:
-            printf("%s LEFT\n", ast_type_name(ast->ast_binary_expr));
+            printf("%s LEFT\n", ast_type_name(ast));
             print_ast(ast->ast_binary_expr->left,indent+4);
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s RIGHT\n", ast_type_name(ast->ast_binary_expr));            
+            printf("%s RIGHT\n", ast_type_name(ast));            
             print_ast(ast->ast_binary_expr->right,indent+4);
             break;
         case N_ASSIGNMENT:
-            printf("%s VARIABLE\n", ast_type_name(ast->ast_assign));
+            printf("%s VARIABLE\n", ast_type_name(ast));
             print_ast(ast->ast_assign->variable,indent+4);
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s EXPRESSION\n", ast_type_name(ast->ast_assign));
+            printf("%s EXPRESSION\n", ast_type_name(ast));
             print_ast(ast->ast_assign->expression,indent+4);
             break;
         case N_IF_STATEMENT:
-            printf("%s CONDITION\n", ast_type_name(ast->ast_if_stat));
+            printf("%s CONDITION\n", ast_type_name(ast));
             print_ast(ast->ast_if_stat->condition,indent+4);
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s THEN\n", ast_type_name(ast->ast_if_stat));
+            printf("%s THEN\n", ast_type_name(ast));
             print_ast(ast->ast_if_stat->then_branch,indent+4);
 
             if(ast->ast_if_stat->else_branch != NULL)
             {
                 for (int i=0; i<indent; i++) { printf(" "); }
-                printf("%s ELSE\n", ast_type_name(ast->ast_if_stat));
+                printf("%s ELSE\n", ast_type_name(ast));
                 print_ast(ast->ast_if_stat->else_branch,indent+4);
             }
             break;
         case N_FOR_STATEMENT:
-            printf("%s INIZIALIZATION\n", ast_type_name(ast->ast_for_stat));
+            printf("%s INIZIALIZATION\n", ast_type_name(ast));
             List *init = ast->ast_for_stat->init;
             for(int i=0; i<list_length(init);i++)
             {
@@ -495,11 +496,11 @@ void print_ast(AST *ast, int indent)
             }
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s CONDITION\n", ast_type_name(ast->ast_for_stat));
+            printf("%s CONDITION\n", ast_type_name(ast));
             print_ast(ast->ast_for_stat->condition,indent+4);
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s INCREMENT\n", ast_type_name(ast->ast_for_stat));
+            printf("%s INCREMENT\n", ast_type_name(ast));
             List *incr = ast->ast_for_stat->increment;
             for(int i=0; i<list_length(incr);i++)
             {
@@ -507,22 +508,22 @@ void print_ast(AST *ast, int indent)
             }
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s LOOP\n", ast_type_name(ast->ast_for_stat));
+            printf("%s LOOP\n", ast_type_name(ast));
             print_ast(ast->ast_for_stat->loop,indent+4);
 
             break;
         case N_RETURN_STATEMENT:
-            printf("%s\n", ast_type_name(ast->ast_return_stat));
+            printf("%s\n", ast_type_name(ast));
             print_ast(ast->ast_return_stat->expression,indent+4);
             break;
         case N_BUILTIN_STATEMENT:
-            printf("%s CONTENT\n", ast_type_name(ast->ast_builtin_stat));
+            printf("%s CONTENT\n", ast_type_name(ast));
             print_ast(ast->ast_builtin_stat->content,indent+4);
 
             if(ast->ast_builtin_stat->variables->items != NULL)
             {
                 for (int i=0; i<indent; i++) { printf(" "); }
-                printf("%s VARIABLES\n", ast_type_name(ast->ast_builtin_stat));
+                printf("%s VARIABLES\n", ast_type_name(ast));
                 List *vars = ast->ast_builtin_stat->variables;
                 for(int i=0; i<list_length(vars);i++)
                 {
@@ -531,7 +532,7 @@ void print_ast(AST *ast, int indent)
             }
             break;
         case N_LIST:
-            printf("%s\n", ast_type_name(ast->ast_list));
+            printf("%s\n", ast_type_name(ast));
             List *list = ast->ast_list->list;
             for(int i=0; i<list_length(list);i++)
             {
@@ -539,24 +540,24 @@ void print_ast(AST *ast, int indent)
             }
             break;
         case N_DEF_FUNCTION:
-            printf("%s NAME\n", ast_type_name(ast->ast_def_function));
+            printf("%s NAME\n", ast_type_name(ast));
             print_ast(ast->ast_def_function->func_name,indent+4);
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s PARAMETERS\n", ast_type_name(ast->ast_def_function));
+            printf("%s PARAMETERS\n", ast_type_name(ast));
             print_ast(ast->ast_def_function->parameters,indent+4);
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s BODY\n", ast_type_name(ast->ast_def_function));
+            printf("%s BODY\n", ast_type_name(ast));
             print_ast(ast->ast_def_function->body,indent+4);
 
             break;
         case N_CALL_FUNCTION:
-            printf("%s NAME\n", ast_type_name(ast->ast_call_function));
+            printf("%s NAME\n", ast_type_name(ast));
             print_ast(ast->ast_call_function->func_name,indent+4);
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s ARGUMENTS\n", ast_type_name(ast->ast_call_function));            
+            printf("%s ARGUMENTS\n", ast_type_name(ast));            
             List *args = ast->ast_call_function->arguments;
             for(int i=0; i<list_length(args);i++)
             {
@@ -565,7 +566,7 @@ void print_ast(AST *ast, int indent)
 
             break;
         case N_BODY:
-            printf("%s DECLARATIONS\n", ast_type_name(ast->ast_body));
+            printf("%s DECLARATIONS\n", ast_type_name(ast));
             List *decl = ast->ast_body->declarations;
             for(int i=0; i<list_length(decl);i++)
             {
@@ -573,7 +574,7 @@ void print_ast(AST *ast, int indent)
             }
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s STATEMENTS\n", ast_type_name(ast->ast_body));
+            printf("%s STATEMENTS\n", ast_type_name(ast));
             List *stat = ast->ast_body->statements;
             for(int i=0; i<list_length(stat);i++)
             {
@@ -582,15 +583,15 @@ void print_ast(AST *ast, int indent)
 
             break;
         case N_ROOT:
-            printf("%s GLOBAL DECLARATIONS\n", ast_type_name(ast->ast_root));
-            List *decl = ast->ast_root->global_declaration;
-            for(int i=0; i<list_length(decl);i++)
+            printf("%s GLOBAL DECLARATIONS\n", ast_type_name(ast));
+            List *glob_decl = ast->ast_root->global_declaration;
+            for(int i=0; i<list_length(glob_decl);i++)
             {
-                print_ast(list_get(decl,i), indent+4);
+                print_ast(list_get(glob_decl,i), indent+4);
             }
 
             for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s FUNCTIONS\n", ast_type_name(ast->ast_root));
+            printf("%s FUNCTIONS\n", ast_type_name(ast));
             List *func = ast->ast_root->functions;
             for(int i=0; i<list_length(func);i++)
             {

@@ -11,22 +11,23 @@
     #include "../src/list.h"
 
 	int yylex();
+    void yyerror (const char *s);
     /* Variable needed for debugging */
 	//int yydebug = 1;
-
-    typedef union {
-        char *sval;
-        List *list;
-        AST *node;
-        int operator;
-        int builtin;
-        int value_type;
-    } yystype;
-    #define YYSTYPE yystype;
 
     // Abstract Syntax Tree
     AST *ast;
 %}
+
+// Definition of possible rule types
+%union {
+    char *sval;
+    List *list;
+    AST *node;
+    int operator;
+    int builtin;
+    int value_type;
+}
 
 /* BISON DECLARATION */
 /* Braces declarations */
@@ -240,7 +241,7 @@ parameter_declaration: var_type identifier
                      ;
 
 /* What is inside a function */
-body: statements                    { $$ = new_AST_Body(list_new(),$2); }
+body: statements                    { $$ = new_AST_Body(list_new(),$1); }
     | declarations statements       { $$ = new_AST_Body($1,$2); }
     ;
 
@@ -260,7 +261,7 @@ statements: statement
 
 /* Statement is the single line instruction
 - assignment rule covers both assignment and mathematical operation */
-statement: SEMICOLON                    {$$ = NULL};
+statement: SEMICOLON                    {$$ = NULL;}
          | func_call SEMICOLON
          | assignment SEMICOLON
          | increment SEMICOLON
@@ -446,7 +447,7 @@ if_stat: IF O_ROUND_BRACES expr C_ROUND_BRACES block %prec IFX
 block: statement
      | O_CURLY_BRACES statements C_CURLY_BRACES
         {
-            $$ = new_AST_Statements($2);
+            $$ = new_AST_List($2);
         }
      ;
 
@@ -528,17 +529,17 @@ var_type: VOID
 - a dotted identifier for struct variables */
 identifier: IDENTIFIER
             {
-                $$ = new_AST_Dec_Variable($1, -1, T_NULL);
+                $$ = new_AST_Variable($1, -1, T_NULL);
             }
           | identifier O_SQUARE_BRACES ICONST C_SQUARE_BRACES
             {
-                $1->n = $3;
+                $1->ast_variable->n = atoi($3);
                 $$ = $1;
             }
           | identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
             {
                 // Search $3 value in ST and save in "n" variable
-                $1->n = value_$3;
+                //$1->ast_variable->n = value_$3;
             }
           | identifier DOT identifier
             {
