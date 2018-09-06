@@ -6,19 +6,19 @@ Although disabling yywrap is certainly the best option, it may also be possible 
 
 %{
 	/* PRE-PROCESSOR SECTION */
-
-	#define YYSTYPE char*
-
 	/* Everything listed here will be copied */
-	#include "grammar.tab.h"
 	#include <stdlib.h>
 	#include <string.h>
 	#include "../src/utils.h"
+    #include "../src/ast.h"
+    #include "../src/list.h"
+	#include "grammar.tab.h"
 
-	static inline void print_token() { printf("%s ", yytext); }
-	static inline void value_token() { yylval = strdup(yytext); }
+	extern void yyerror (const char *s);
+	static inline void value_token() { yylval.sval = strdup(yytext); }
 %}
 
+%option yylineno
 
 /* TOKEN DEFINITION BY USING REGULAR EXPRESSION */
 /* comment state definition */
@@ -44,69 +44,69 @@ id				{alpha}({alpha}|{digit}|{underscore})*
 "/*" 						BEGIN(comm);
 <comm>[^*/\n]* 				/* if not a '*' or new line, discard everything */
 <comm>"*"+[^*/\n]* 			/* discard '*' not warning for comment end and all next characters */
-<comm>\n 					{lineno += 1;} /* discard new lines */
+<comm>\n 					/* discard new lines */
 <comm>"*"+"/" 				BEGIN(INITIAL);
 
 "//"						BEGIN(line_comm);
 <line_comm>[^/\n]* 			/* if not a new line, discard everything */
-<line_comm>\n				{lineno += 1; BEGIN(INITIAL);}
+<line_comm>\n				{BEGIN(INITIAL);}
 
-"{"							{print_token(); value_token(); return O_CURLY_BRACES;}
-"}"							{print_token(); value_token(); return C_CURLY_BRACES;}
-"["							{print_token(); value_token(); return O_SQUARE_BRACES;}
-"]"							{print_token(); value_token(); return C_SQUARE_BRACES;}
-"("							{print_token(); value_token(); return O_ROUND_BRACES;}
-")"							{print_token(); value_token(); return C_ROUND_BRACES;}
+"{"							{value_token(); return O_CURLY_BRACES;}
+"}"							{value_token(); return C_CURLY_BRACES;}
+"["							{value_token(); return O_SQUARE_BRACES;}
+"]"							{value_token(); return C_SQUARE_BRACES;}
+"("							{value_token(); return O_ROUND_BRACES;}
+")"							{value_token(); return C_ROUND_BRACES;}
 
-"."							{print_token(); value_token(); return DOT;}
-","							{print_token(); value_token(); return COMMA;}
-";"							{print_token(); value_token(); return SEMICOLON;}
-"&"							{print_token(); value_token(); return E_COMM;}
+"."							{value_token(); return DOT;}
+","							{value_token(); return COMMA;}
+";"							{value_token(); return SEMICOLON;}
+"&"							{value_token(); return E_COMM;}
 
-"="							{print_token(); value_token(); return ASSIGN;}
+"="							{value_token(); return ASSIGN;}
 
-"++"						{print_token(); value_token(); return INCR;}
-"--"						{print_token(); value_token(); return INCR;}
+"++"						{yylval.operator = U_INC; return INCR;}
+"--"						{yylval.operator = U_DEC; return INCR;}
 
-"+"							{print_token(); value_token(); return ADD;}
-"-"							{print_token(); value_token(); return SUB;}
-"*"							{print_token(); value_token(); return TIMES;}
-"/"							{print_token(); value_token(); return DIVIDE;}
+"+"							{yylval.operator = B_ADD; return ADD;}
+"-"							{yylval.operator = B_SUB; return SUB;}
+"*"							{yylval.operator = B_MUL; return TIMES;}
+"/"							{yylval.operator = B_DIV; return DIVIDE;}
 
-"=="						{print_token(); value_token(); return EQOP;}
-"!="						{print_token(); value_token(); return EQOP;}
-"<"							{print_token(); value_token(); return RELOP;}
-"<="						{print_token(); value_token(); return RELOP;}
-">"							{print_token(); value_token(); return RELOP;}
-">="						{print_token(); value_token(); return RELOP;}
+"=="						{yylval.operator = B_EQ; return EQOP;}
+"!="						{yylval.operator = B_NE; return EQOP;}
+"<"							{yylval.operator = B_LT; return RELOP;}
+"<="						{yylval.operator = B_LE; return RELOP;}
+">"							{yylval.operator = B_GT; return RELOP;}
+">="						{yylval.operator = B_GE; return RELOP;}
 
-"&&"						{print_token(); value_token(); return AND;}
-"||"						{print_token(); value_token(); return OR;}
-"!"							{print_token(); value_token(); return NOT;}
+"&&"						{yylval.operator = B_AND; return AND;}
+"||"						{yylval.operator = B_OR; return OR;}
+"!"							{yylval.operator = U_NOT; return NOT;}
 
-"char"						{print_token(); value_token(); return CHAR;}
-"else"						{print_token(); value_token(); return ELSE;}
-"float"						{print_token(); value_token(); return FLOAT;}
-"for"						{print_token(); value_token(); return FOR;}
-"if"						{print_token(); value_token(); return IF;}
-"int"						{print_token(); value_token(); return INT;}
-"printf"					{print_token(); value_token(); return PRINTF;}
-"return"					{print_token(); value_token(); return RETURN;}
-"scanf"						{print_token(); value_token(); return SCANF;}
-"struct"					{print_token(); value_token(); return STRUCT;}
-"void"						{print_token(); value_token(); return VOID;}
+"char"						{yylval.value_type = T_CHAR; return CHAR;}
+"else"						{value_token(); return ELSE;}
+"float"						{yylval.value_type = T_FLOAT; return FLOAT;}
+"for"						{value_token(); return FOR;}
+"if"						{value_token(); return IF;}
+"int"						{yylval.value_type = T_INT; return INT;}
+"printf"					{yylval.builtin = F_PRINTF; return PRINTF;}
+"return"					{value_token(); return RETURN;}
+"scanf"						{yylval.builtin = F_SCANF; return SCANF;}
+"struct"					{yylval.value_type = T_STRUCT; return STRUCT;}
+"void"						{yylval.value_type = T_VOID; return VOID;}
 
 {ws}						{/* ignore it */}
-"\n"						{print_token(); lineno += 1;}
+"\n"						{/* ignore it */}
 
 {header}					{/* ignore it */}
-{id}						{print_token(); value_token(); return IDENTIFIER;}
+{id}						{value_token(); return IDENTIFIER;}
 
-{digit}+					{print_token(); value_token(); return ICONST;}
-{digit}+\.{digit}+			{print_token(); value_token(); return FCONST;}
-{digit}+(\.{digit}+)?{exp}	{print_token(); value_token(); return FCONST;}
-{char}						{print_token(); value_token(); return CCONST;}
-{string}					{print_token(); value_token(); return STRCONST;}
+{digit}+					{value_token(); return ICONST;}
+{digit}+\.{digit}+			{value_token(); return FCONST;}
+{digit}+(\.{digit}+)?{exp}	{value_token(); return FCONST;}
+{char}						{value_token(); return CCONST;}
+{string}					{value_token(); return STRCONST;}
 
 .               			{yyerror("Unrecognized character");}
 

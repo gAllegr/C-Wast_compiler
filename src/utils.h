@@ -1,9 +1,8 @@
-/* ===== Interface with lexer ===== */
+#ifndef UTILS_H
+#define UTILS_H
 
-int lineno;                                     /* variable counting lines */
-void yyerror(const char *);                     /* prints grammar violation message */
-
-/* ===== Parser functions ===== */
+/* ===== Concatenation of many strings ===== */
 
 char* concat(int n_token, char *token,...);     /* concat tokens of a rule */
 
+#endif
