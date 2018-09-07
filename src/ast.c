@@ -42,6 +42,34 @@ AST *new_AST_Variable (char *name, int n, ValType type)
     return ast;
 }
 
+AST *new_AST_Struct (char *name, ValType type, List *declarations)
+{
+    AST_Struct *ast_struct = malloc(sizeof(AST_Struct));
+    ast_struct->name = name;
+    ast_struct->type = type;
+    ast_struct->declarations = declarations;
+
+    AST *ast = malloc(sizeof(AST));
+    ast->type = N_STRUCT;
+    ast->ast_struct = ast_struct;
+
+    return ast;
+}
+
+AST *new_AST_Var_Struct (AST *def_struct, char *name, int n)
+{
+    AST_Var_Struct *ast_var_struct = malloc(sizeof(AST_Var_Struct));
+    ast_var_struct->def_struct = def_struct;
+    ast_var_struct->name = name;
+    ast_var_struct->n = n;
+
+    AST *ast = malloc(sizeof(AST));
+    ast->type = N_VAR_STRUCT;
+    ast->ast_var_struct = ast_var_struct;
+
+    return ast;
+}
+
 AST *new_AST_Unary_Expr (UnaryExprType unary_type, AST *expression)
 {
     AST_Unary_Expr *ast_unary_expr = malloc(sizeof(AST_Unary_Expr));
@@ -236,6 +264,12 @@ char *ast_type_name(AST *ast)
                     break;
             }
             break;
+        case N_STRUCT:
+            return "STRUCT Definition";
+            break;
+        case N_VAR_STRUCT:
+            return "STRUCT Variable";
+            break;
         case N_UNARY_EXPR:
             switch(ast->ast_unary_expr->unary_type)
             {
@@ -368,6 +402,16 @@ void free_ast(AST *ast)
             free(ast->ast_variable->name);
             free(ast->ast_variable);
             break;
+        case N_STRUCT:
+            free(ast->ast_struct->name);
+            free_ast_list(ast->ast_struct->declarations);
+            free(ast->ast_struct);
+            break;
+        case N_VAR_STRUCT:
+            free_ast(ast->ast_var_struct->def_struct);
+            free(ast->ast_var_struct->name);
+            free(ast->ast_var_struct);
+            break;
         case N_UNARY_EXPR:
             free_ast(ast->ast_unary_expr->expression);
             free(ast->ast_unary_expr);
@@ -465,6 +509,29 @@ void print_ast(AST *ast, int indent)
                 printf("%s %s\n", ast_type_name(ast), ast->ast_variable->name);
             else
                 printf("%s %s[%d]\n", ast_type_name(ast), ast->ast_variable->name, ast->ast_variable->n);
+            break;
+        case N_STRUCT:
+            printf("%s %s\n", ast_type_name(ast), ast->ast_struct->name);
+
+            List *struct_decl = ast->ast_struct->declarations;
+            for(int i=0; i<list_length(struct_decl);i++)
+            {
+                print_ast(list_get(struct_decl,i), indent+4);
+            }
+
+            break;
+        case N_VAR_STRUCT:
+            if(ast->ast_variable->n==-1)
+                printf("%s NAME: %s\n", ast_type_name(ast), ast->ast_var_struct->name);
+            else
+                printf("%s NAME: %s[%d]\n", ast_type_name(ast), ast->ast_var_struct->name, ast->ast_var_struct->n);
+            
+            for (int i=0; i<indent; i++) { printf(" "); }
+            if(ast->ast_var_struct->def_struct->ast_struct->name != NULL)
+                printf("%s TYPE: STRUCT %s\n", ast_type_name(ast), ast->ast_var_struct->def_struct->ast_struct->name);
+            else
+                printf("%s TYPE: STRUCT Unknown\n", ast_type_name(ast));
+
             break;
         case N_UNARY_EXPR:
             printf("%s\n", ast_type_name(ast));

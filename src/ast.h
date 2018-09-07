@@ -7,6 +7,8 @@
 typedef enum AstType {
     N_CONSTANT,
     N_VARIABLE,
+    N_STRUCT,               /* definiton of struct */
+    N_VAR_STRUCT,           /* variable of type "struct identifier" */   
     N_UNARY_EXPR,
     N_BINARY_EXPR,
     N_ASSIGNMENT,
@@ -81,6 +83,18 @@ typedef struct AST_Variable {
     ValType type;
 } AST_Variable;
 
+typedef struct AST_Struct {
+    char *name;
+    ValType type;
+    List *declarations;
+} AST_Struct;
+
+typedef struct AST_Var_Struct {
+    AST *def_struct;
+    char *name;         // name or element of struct variable
+    int n;
+} AST_Var_Struct;
+
 typedef struct AST_Unary_Expr {
     UnaryExprType unary_type;
     AST *expression;
@@ -151,6 +165,8 @@ struct AST {
     union {
         AST_Const *ast_constant;
         AST_Variable *ast_variable;
+        AST_Struct *ast_struct;
+        AST_Var_Struct *ast_var_struct;
         AST_Unary_Expr *ast_unary_expr;
         AST_Binary_Expr *ast_binary_expr;
         AST_Assign *ast_assign;
@@ -169,6 +185,8 @@ struct AST {
 /* Functions */
 AST *new_AST_Const(ValType type, char *value);
 AST *new_AST_Variable (char *name, int n, ValType type);
+AST *new_AST_Struct (char *name, ValType type, List *declarations);
+AST *new_AST_Var_Struct (AST *def_struct, char *name, int n);
 AST *new_AST_Unary_Expr (UnaryExprType unary_type, AST *expression);
 AST *new_AST_Binary_Expr (BinaryExprType binary_type, AST *right, AST *left);
 AST *new_AST_Assign (AST *variable, AST *expression);

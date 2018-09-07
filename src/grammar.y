@@ -63,11 +63,11 @@
 %left DOT INCR O_ROUND_BRACES C_ROUND_BRACES O_SQUARE_BRACES C_SQUARE_BRACES
 
 %type <node> program body statement block
-%type <node> simple_declaration struct_declaration 
+%type <node> simple_declaration  
 %type <node> func_definition argument_list parameter_declaration func_call 
 %type <node> assignment expr increment return_stat printf_stat scanf_stat if_stat for_stat
 %type <node> identifier const word number
-%type <list> declarations declaration var_decl inizialization_list
+%type <list> declarations declaration var_decl struct_declaration inizialization_list
 %type <list> functions parameter_list statements call_args printed_var retrieved_var incr_for init_for
 %type <value_type> var_type
 
@@ -118,17 +118,18 @@ declaration: var_type var_decl SEMICOLON
                     $$ = $2;
                 }
             | struct_declaration SEMICOLON
-                {
-                    // Struct not yet considered in AST
-                }
-             ;
+            ;
 
 /* Recursion allows to define both simple declaration and declaration with assignment */
 var_decl: simple_declaration
             {
-                List *var_list = list_new();
-                list_append(var_list, $1);
-                $$ = var_list;
+                if($1 != NULL)
+                {
+                    List *var_list = list_new();
+                    list_append(var_list, $1);
+                    $$ = var_list;
+                }
+                else $$ = NULL;
             }
         | assignment
             {
@@ -150,7 +151,23 @@ simple_declaration: /* empty */         { $$ = NULL; }
 /* Declaration of a struct table */
 struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES var_decl
                     {
-                        // Struct not yet considered in AST
+                        if($6 != NULL)
+                        {
+                            AST *struct_def = new_AST_Struct ($2->ast_variable->name, $1, $4);
+
+                            AST *a;
+                            for(int i=0; i<list_length($6);i++)
+                            {
+                                a = list_get($6,i);
+                                
+                                if(a->type == N_VARIABLE)
+                                    $6->items[i] = new_AST_Var_Struct (struct_def, a->ast_variable->name, a->ast_variable->n);
+                                
+                                if(a->type == N_ASSIGNMENT)
+                                    $6->items[i] = new_AST_Var_Struct (struct_def, a->ast_assign->variable->ast_variable->name, a->ast_assign->variable->ast_variable->n);
+                            }
+                        }
+                        $$ = $6;
                     }
                   ;
 
@@ -517,10 +534,7 @@ var_type: VOID
         | INT
         | FLOAT
         | CHAR
-        | STRUCT identifier
-            {
-                // Struct not yet considered in AST
-            }
+        | STRUCT
         ;
 
 /* The identifier can be :
@@ -543,7 +557,25 @@ identifier: IDENTIFIER
             }
           | identifier DOT identifier
             {
-                // Struct not yet considered in AST
+                char c[50];
+                char *c1,*c2;
+                // name+dimension/index of first identifier
+                if($1->ast_variable->n == -1) c1 = $1->ast_variable->name;
+                else
+                {
+                    sprintf(c, "%s[%d]", $1->ast_variable->name, $1->ast_variable->n);
+                    c1 = c;
+                }
+                // name+dimension/index of second identifier
+                if($3->ast_variable->n == -1) c2 = $3->ast_variable->name;
+                else
+                {
+                    sprintf(c, "%s[%d]", $3->ast_variable->name, $3->ast_variable->n);
+                    c2 = c;
+                }
+                // concat identifiers and use it as name for AST *var_struct
+                c1 = concat(3, "", c1,$2,c2);
+                $$ = new_AST_Var_Struct(new_AST_Struct(NULL, T_STRUCT, NULL), c1, $1->ast_variable->n);
             }
           ;
 

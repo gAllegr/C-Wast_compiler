@@ -5,7 +5,7 @@
 
 /* ===== Concatenation of many strings ===== */
 
-char* concat(int n_token, char *token,...)
+char* concat(int n_token, char *sep, char *token,...)
 {
 	int i;
 	va_list vl;
@@ -14,7 +14,7 @@ char* concat(int n_token, char *token,...)
 	char *concatenated = token;
 	for(i=1; i<n_token; i++)
 	{
-		concatenated = strcat(strcat(concatenated," "),va_arg(vl,char *));
+		concatenated = strcat(strcat(concatenated,sep),va_arg(vl,char *));
 	}
 
 	va_end(vl);
