@@ -19,6 +19,8 @@
     AST *ast;
 %}
 
+%expect 1
+
 // Definition of possible rule types
 %union {
     char *sval;
@@ -159,12 +161,17 @@ struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES
                             for(int i=0; i<list_length($6);i++)
                             {
                                 a = list_get($6,i);
-                                
                                 if(a->type == N_VARIABLE)
-                                    $6->items[i] = new_AST_Var_Struct (struct_def, a->ast_variable->name, a->ast_variable->n);
+                                {
+                                    a = new_AST_Var_Struct (struct_def, a->ast_variable->name, a->ast_variable->n);
+                                    $6->items[i] = a;
+                                }
                                 
                                 if(a->type == N_ASSIGNMENT)
-                                    $6->items[i] = new_AST_Var_Struct (struct_def, a->ast_assign->variable->ast_variable->name, a->ast_assign->variable->ast_variable->n);
+                                {
+                                    a->ast_assign->variable = new_AST_Var_Struct (struct_def, a->ast_assign->variable->ast_variable->name, a->ast_assign->variable->ast_variable->n);
+                                    $6->items[i] = a;
+                                }
                             }
                         }
                         $$ = $6;

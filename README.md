@@ -19,6 +19,10 @@ Aim of this project is to implement a front-end compiler which transform a C sou
 `sudo apt install xdot`
 
 ## Lexicon and Syntax Rules
+### Shift/Reduce Conflict
+Our grammar has only one S/R conflict. However, this conflict is correctly managed by Bison.<br>
+We suppressed the S/R warning using `%expect 1` declaration.
+
 ### Types allowed
 * Integer values
 * Float values

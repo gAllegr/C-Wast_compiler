@@ -408,7 +408,6 @@ void free_ast(AST *ast)
             free(ast->ast_struct);
             break;
         case N_VAR_STRUCT:
-            free_ast(ast->ast_var_struct->def_struct);
             free(ast->ast_var_struct->name);
             free(ast->ast_var_struct);
             break;
@@ -449,6 +448,20 @@ void free_ast(AST *ast)
             free(ast->ast_builtin_stat);
             break;
         case N_LIST:
+            ;   // C grammar doesn't allow declarations after label
+            // clear N_STRUCT node only once, if present
+            List *l = ast->ast_list->list;
+            for(int i=0; i<list_length(l);i++)
+            {
+                AST *a = list_get(l,i);
+                // struct variable definition by assignment 
+                if(a->type == N_ASSIGNMENT && a->ast_assign->variable->type!=N_VARIABLE &&  a->ast_assign->variable->ast_var_struct->def_struct != NULL)
+                    free_ast(a->ast_assign->variable->ast_var_struct->def_struct);
+                // struct variable definition by simple declaration 
+                if(a->type == N_VAR_STRUCT && a->ast_var_struct->def_struct != NULL)
+                    free_ast(a->ast_var_struct->def_struct);
+            }
+            // free elements' list
             free_ast_list(ast->ast_list->list);
             free(ast->ast_list);
             break;
@@ -474,7 +487,7 @@ void free_ast(AST *ast)
             free(ast->ast_root);
             break;
         default:
-            printf("Could not free syntax tree with type: %s", ast_type_name(ast));
+            printf("Could not free syntax tree with type: %s\n", ast_type_name(ast));
             exit(EXIT_FAILURE);
     }
 
@@ -521,14 +534,17 @@ void print_ast(AST *ast, int indent)
 
             break;
         case N_VAR_STRUCT:
-            if(ast->ast_variable->n==-1)
+            if(ast->ast_var_struct->n==-1)
                 printf("%s NAME: %s\n", ast_type_name(ast), ast->ast_var_struct->name);
             else
                 printf("%s NAME: %s[%d]\n", ast_type_name(ast), ast->ast_var_struct->name, ast->ast_var_struct->n);
             
             for (int i=0; i<indent; i++) { printf(" "); }
             if(ast->ast_var_struct->def_struct->ast_struct->name != NULL)
+            {
                 printf("%s TYPE: STRUCT %s\n", ast_type_name(ast), ast->ast_var_struct->def_struct->ast_struct->name);
+                print_ast(ast->ast_var_struct->def_struct, indent+4);
+            }
             else
                 printf("%s TYPE: STRUCT Unknown\n", ast_type_name(ast));
 

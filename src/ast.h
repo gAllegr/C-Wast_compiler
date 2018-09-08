@@ -107,7 +107,7 @@ typedef struct AST_Binary_Expr {
 } AST_Binary_Expr;
 
 typedef struct AST_Assign {
-    AST *variable;          /* AST_Dec_Variable */
+    AST *variable;          /* AST_Variable */
     AST *expression;
 } AST_Assign;
 
