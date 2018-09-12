@@ -1,4 +1,5 @@
 #include "list.h"
+#include "symtab.h"
 
 #ifndef AST_H
 #define AST_H
@@ -7,8 +8,6 @@
 typedef enum AstType {
     N_CONSTANT,
     N_VARIABLE,
-    N_STRUCT,               /* definiton of struct */
-    N_VAR_STRUCT,           /* variable of type "struct identifier" */   
     N_UNARY_EXPR,
     N_BINARY_EXPR,
     N_ASSIGNMENT,
@@ -53,16 +52,6 @@ typedef enum BuiltinFunction {
     F_SCANF
 } BuiltinFunction;
 
-/* Enumeration for value types */
-typedef enum ValType {
-    T_VOID,
-    T_INT,
-    T_FLOAT,
-    T_CHAR,
-    T_STRUCT,
-    T_NULL          /* to be used if we don't know type */
-} ValType;
-
 /* Declare Abstract Syntax Tree */
 struct AST;
 typedef struct AST AST;
@@ -78,22 +67,8 @@ typedef struct AST_Const {
 } AST_Const;
 
 typedef struct AST_Variable {
-    char *name;
-    int n;              /* array index or array size (-1 if not array) */
-    ValType type;
+    SymTab_Variables *sym_variable;
 } AST_Variable;
-
-typedef struct AST_Struct {
-    char *name;
-    ValType type;
-    List *declarations;
-} AST_Struct;
-
-typedef struct AST_Var_Struct {
-    AST *def_struct;
-    char *name;         // name or element of struct variable
-    int n;
-} AST_Var_Struct;
 
 typedef struct AST_Unary_Expr {
     UnaryExprType unary_type;
@@ -139,8 +114,7 @@ typedef struct AST_List {
 } AST_List;
 
 typedef struct AST_Def_Function {
-    AST *func_name;     /* AST_Variable */
-    AST *parameters;    /* AST_List */
+    SymTab_Functions *sym_function;
     AST *body;          /* AST_Body */
 } AST_Def_Function;
 
@@ -165,8 +139,6 @@ struct AST {
     union {
         AST_Const *ast_constant;
         AST_Variable *ast_variable;
-        AST_Struct *ast_struct;
-        AST_Var_Struct *ast_var_struct;
         AST_Unary_Expr *ast_unary_expr;
         AST_Binary_Expr *ast_binary_expr;
         AST_Assign *ast_assign;
@@ -184,9 +156,7 @@ struct AST {
 
 /* Functions */
 AST *new_AST_Const(ValType type, char *value);
-AST *new_AST_Variable (char *name, int n, ValType type);
-AST *new_AST_Struct (char *name, ValType type, List *declarations);
-AST *new_AST_Var_Struct (AST *def_struct, char *name, int n);
+AST *new_AST_Variable (char *name, int n, ValType type, struct_info *s_info, int declared, int inizialized);
 AST *new_AST_Unary_Expr (UnaryExprType unary_type, AST *expression);
 AST *new_AST_Binary_Expr (BinaryExprType binary_type, AST *right, AST *left);
 AST *new_AST_Assign (AST *variable, AST *expression);
@@ -195,7 +165,7 @@ AST *new_AST_For_Stat (List *init, AST *condition, List *increment, AST *loop);
 AST *new_AST_Return_Stat (AST *expression);
 AST *new_AST_Builtin_Stat (BuiltinFunction function, AST *content, List *variables);
 AST *new_AST_List (List *list);
-AST *new_AST_Def_Function (AST *func_name, AST *parameters, AST *body);
+AST *new_AST_Def_Function (AST *func_name);
 AST *new_AST_Call_Function (AST *func_name, List *arguments);
 AST *new_AST_Body (List *declarations, List *statements);
 AST *new_AST_Root (List *global_declaration, List *functions);

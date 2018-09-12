@@ -19,10 +19,6 @@ Aim of this project is to implement a front-end compiler which transform a C sou
 `sudo apt install xdot`
 
 ## Lexicon and Syntax Rules
-### Shift/Reduce Conflict
-Our grammar has only one S/R conflict. However, this conflict is correctly managed by Bison.<br>
-We suppressed the S/R warning using `%expect 1` declaration.
-
 ### Types allowed
 * Integer values
 * Float values
@@ -79,7 +75,8 @@ C is a procedural language, so the main structure of a program is composed only 
 * Array can be declared only with size specification<br>
   * Allowed: `int a[2] = {3,5};`<br>
   * Not allowed: `int a[] = {3,5};`
-* Char array (string) can be declared as `char s[6]={"H","e","l","l","o"};` or as `char s[6]="Hello";`<br><br>
+* Char array (string) can be declared as `char s[6]={"H","e","l","l","o"};` or as `char s[6]="Hello";`<br>
+* If array dimension is specified by a variable, further checks cannot be made (e.g. during inizialization)<br><br>
 * Struct can be created as a list of variable declarations without inizialization
 * After defining a struct, a variable can be declared in two possible way:
   * as an usual declaration`struct struct_identifier identifier;`
