@@ -1,7 +1,6 @@
 %{
 	/* CONTENT TO BE COPIED AT THE BEGINNING */
 
-
 	/* include directives */
 	#include <stdio.h>
 	#include <stdlib.h>
@@ -16,8 +15,8 @@
     /* Variable needed for debugging */
 //	int yydebug = 1;
 
-    // Abstract Syntax Tree
-    AST *ast;
+    AST *ast;               // Abstract Syntax Tree
+    SymTab *symtab;         // Symbol Table
 %}
 
 // Definition of possible rule types
@@ -108,9 +107,13 @@ declaration: var_type var_decl SEMICOLON
                         switch(obj->type) {
                             case N_VARIABLE:
                                 obj->ast_variable->sym_variable->type = $1;
+                                // Insert declared variables in Symbol Table
+                                insert_var(symtab, obj->ast_variable->sym_variable, scope);
                                 break;
                             case N_ASSIGNMENT:
                                 obj->ast_assign->variable->ast_variable->sym_variable->type = $1;
+                                // Insert declared variables in Symbol Table
+                                insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
                                 break;
                         }
                         $2->items[i] = obj;
@@ -119,6 +122,24 @@ declaration: var_type var_decl SEMICOLON
                     $$ = $2;
                 }
             | struct_declaration SEMICOLON
+                {
+                    for(int i=0; i<list_length($1);i++)
+                    {
+                        AST *obj = list_get($1,i);
+                        switch(obj->type) {
+                            case N_VARIABLE:
+                                // Insert declared variables in Symbol Table
+                                insert_var(symtab, obj->ast_variable->sym_variable, scope);
+                                break;
+                            case N_ASSIGNMENT:
+                                // Insert declared variables in Symbol Table
+                                insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
+                                break;
+                        }
+                    }
+
+                    $$ = $1;
+                }
             ;
 
 /* Recursion allows to define both simple declaration and declaration with assignment */
@@ -236,10 +257,18 @@ func_definition: var_type identifier
                  {
                     $2->ast_variable->sym_variable->type = $1;
                     $<node>$ = new_AST_Def_Function($2);
+                    // Insert declared function in Symbol Table
+                    insert_fun(symtab, $<node>$->ast_def_function->sym_function);
+                    // Update scope
+                    scope = $<node>$->ast_def_function->sym_function->func_name->name;
                  }
                  O_ROUND_BRACES argument_list C_ROUND_BRACES O_CURLY_BRACES body C_CURLY_BRACES
                     {
-                        if($5 != NULL) $<node>3->ast_def_function->sym_function->parameters = convert($5->ast_list->list);
+                        if($5 != NULL) 
+                        {
+                            $<node>3->ast_def_function->sym_function->parameters = convert($5->ast_list->list);
+                            update_par(symtab, $<node>3->ast_def_function->sym_function->parameters, scope);
+                        }
                         $<node>3->ast_def_function->body = $8;
                         $$ = $<node>3;
                     }
@@ -650,7 +679,8 @@ void yyerror (const char *s)
 int main (void)
 {
 	// initialize symbol table
-    //	init_hash_table();
+    symtab = init_symtab();
+    scope = "GLOBAL";
 
 	int result = yyparse();
 	if(result==0)

@@ -3,6 +3,8 @@
 #ifndef SYMTAB_H
 #define SYMTAB_H
 
+char *scope;
+
 /* Enumeration for value types */
 typedef enum ValType {
     T_VOID,
@@ -49,9 +51,13 @@ SymTab_Variables *new_SymTab_Variables (char *name, int n, ValType type, struct_
 SymTab_Functions *new_SymTab_Functions (SymTab_Variables *func_name);
 struct_info *new_struct_info (char *name, List *elements);
 
+SymTab *init_symtab();
+void insert_var(SymTab *symtab, SymTab_Variables *sym_var, char *scope);
+void insert_fun(SymTab *symtab, SymTab_Functions *sym_fun);
+void update_par(SymTab *symtab, List *parameters, char *scope);
+
+
 /*
-SymTab *init_sym_tab();
-void insert();
 void lookup();
 */
 

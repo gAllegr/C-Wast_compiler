@@ -40,8 +40,8 @@ List *convert(List *start)
 				list_append(final, a->ast_variable->sym_variable);
 				break;
 			case N_ASSIGNMENT:
-				printf("Struct elements cannot be inizialized!!!\n\n");
-           		exit(EXIT_FAILURE);
+					printf("Struct elements cannot be inizialized!!!\n\n");
+					exit(EXIT_FAILURE);
 				break;
 		}
 	}

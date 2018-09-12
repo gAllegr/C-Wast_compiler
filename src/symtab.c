@@ -34,13 +34,48 @@ struct_info *new_struct_info (char *name, List *elements)
     return s;
 }
 
-/*
-SymTab *init_sym_tab()
+SymTab *init_symtab()
 {
     SymTab *sym_tab = malloc(sizeof(SymTab));
-    sym_tab->global_variables = NULL;
-    sym_tab->functions = NULL;
+    sym_tab->global_variables = list_new();
+    sym_tab->functions = list_new();
 
     return sym_tab;
 }
-*/
+
+void insert_var(SymTab *symtab, SymTab_Variables *sym_var, char *scope)
+{
+    if(scope == "GLOBAL") list_append(symtab->global_variables, sym_var);
+    else
+    {
+        for(int i=0; i<list_length(symtab->functions);i++)
+        {
+            SymTab_Functions *f = list_get(symtab->functions,i);
+            if(scope == f->func_name->name)
+            {
+                list_append(f->local_variables, sym_var);
+                symtab->functions->items[i] = f;
+                break;
+            }
+        }
+    }
+}
+
+void insert_fun(SymTab *symtab, SymTab_Functions *sym_fun)
+{
+    list_append(symtab->functions, sym_fun);
+}
+
+void update_par(SymTab *symtab, List *parameters, char *scope)
+{
+    for(int i=0; i<list_length(symtab->functions);i++)
+    {
+        SymTab_Functions *f = list_get(symtab->functions,i);
+        if(scope == f->func_name->name)
+        {
+            f->parameters = parameters;
+            symtab->functions->items[i] = f;
+            break;
+        }
+    }
+}
