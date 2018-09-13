@@ -170,7 +170,7 @@ AST *new_AST_Call_Function (AST *func_name, List *arguments);
 AST *new_AST_Body (List *declarations, List *statements);
 AST *new_AST_Root (List *global_declaration, List *functions);
 
-void free_ast(AST *ast);
 void print_ast(AST *ast, int indent);
+void free_ast(AST *ast);
 
 #endif

@@ -56,6 +56,9 @@ void insert_var(SymTab *symtab, SymTab_Variables *sym_var, char *scope);
 void insert_fun(SymTab *symtab, SymTab_Functions *sym_fun);
 void update_par(SymTab *symtab, List *parameters, char *scope);
 
+void print_symtab(SymTab *symtab);
+void print_symfun(SymTab_Functions* symfun);
+void print_symvar(SymTab_Variables *symvar,char *kind);
 
 /*
 void lookup();

@@ -31,7 +31,7 @@ ws 				{delim}+
 digit 			[0-9]
 exp 			([Ee][+-]?{digit}*)
 /* alphabetics */
-alpha			[a-zA-z]
+alpha			[a-zA-Z]
 underscore		[_]
 char			\".\"
 string			\"(\\.|[^"\\])*\"

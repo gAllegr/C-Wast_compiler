@@ -2455,7 +2455,10 @@ int main (void)
         printf("Now I'll print the abstract syntax tree!\n\n");
         print_ast(ast,0); printf("\n");
 
-        /* other stuff must be added */
+        printf("Now I'll print the symbol table!\n\n");
+        print_symtab(symtab); printf("\n");
+
+        /* other stuff (code_gen) */
 
         printf("Now I'll free memory occupied by abstract syntax tree!\n");
         free_ast(ast);
