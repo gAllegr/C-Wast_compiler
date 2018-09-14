@@ -175,10 +175,20 @@ struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES
                     {
                         if($6 != NULL)
                         {
+                            int i,pos;
+                            SymTab_Variables *v;
+
                             List *elements = convert($4);
+                            // delete struct elements from global or local variables in symbol table
+                            for(i=0;i<list_length(elements);i++)
+                            {
+                                v = list_get(elements,i);
+                                pos = lookup(symtab, v->name, scope);
+                                remove_symtab_variable(symtab, scope, pos);
+                            }
 
                             AST *a;
-                            for(int i=0; i<list_length($6);i++)
+                            for(i=0; i<list_length($6);i++)
                             {
                                 a = list_get($6,i);
                                 if(a->type == N_VARIABLE)
@@ -686,11 +696,11 @@ int main (void)
 	if(result==0)
     {
         printf("\nCORRECT SYNTAX! \\^.^/ \n");
-        printf("Now I'll print the abstract syntax tree!\n\n");
+        printf("\n\nNow I'll print the abstract syntax tree!\n\n");
         print_ast(ast,0); printf("\n");
 
-        printf("Now I'll print the symbol table!\n\n");
-        print_symtab(symtab); printf("\n");
+        printf("\n\nNow I'll print the symbol table!\n\n");
+        print_symtab(symtab);
 
         /* other stuff (code_gen) */
 

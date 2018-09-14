@@ -11,6 +11,7 @@ typedef struct List {
 List *list_new(void);
 int list_length(List *list);
 void list_append(List *list, void *item);
+void list_remove(List *list, int index);
 void *list_get(List *list, int index);
 List *list_merge(List *first_list, List *second_list);
 

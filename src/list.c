@@ -25,6 +25,16 @@ void list_append(List *list, void *item) {
     list->items[list->size - 1] = item;
 }
 
+/* Remove an item in a specific position */
+void list_remove(List *list, int index)
+{
+    for(int i=index;i<list_length(list)-1;i++)
+        list->items[i] = list->items[i++];
+
+    list->size--;
+    list->items = realloc(list->items, list->size * sizeof(list->items[0]));
+}
+
 /* Get a specific element of the list */
 void *list_get(List *list, int index) {
     return list->items[index];

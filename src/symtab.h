@@ -52,16 +52,17 @@ SymTab_Functions *new_SymTab_Functions (SymTab_Variables *func_name);
 struct_info *new_struct_info (char *name, List *elements);
 
 SymTab *init_symtab();
+
 void insert_var(SymTab *symtab, SymTab_Variables *sym_var, char *scope);
 void insert_fun(SymTab *symtab, SymTab_Functions *sym_fun);
 void update_par(SymTab *symtab, List *parameters, char *scope);
 
 void print_symtab(SymTab *symtab);
 void print_symfun(SymTab_Functions* symfun);
-void print_symvar(SymTab_Variables *symvar,char *kind);
+void print_symvar(SymTab_Variables *symvar,char *kind, List *struct_infos);
+void print_struct_info(List *struct_infos);
 
-/*
-void lookup();
-*/
+int lookup(SymTab *symtab, char *name, char *scope);
+void remove_symtab_variable(SymTab *symtab, char *scope, int pos);
 
 #endif
