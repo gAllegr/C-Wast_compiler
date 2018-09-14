@@ -19,10 +19,6 @@ Aim of this project is to implement a front-end compiler which transform a C sou
 `sudo apt install xdot`
 
 ## Lexicon and Syntax Rules
-### Shift/Reduce Conflict
-Our grammar has only one S/R conflict. However, this conflict is correctly managed by Bison.<br>
-We suppressed the S/R warning using `%expect 1` declaration.
-
 ### Types allowed
 * Integer values
 * Float values
@@ -79,7 +75,8 @@ C is a procedural language, so the main structure of a program is composed only 
 * Array can be declared only with size specification<br>
   * Allowed: `int a[2] = {3,5};`<br>
   * Not allowed: `int a[] = {3,5};`
-* Char array (string) can be declared as `char s[6]={"H","e","l","l","o"};` or as `char s[6]="Hello";`<br><br>
+* Char array (string) can be declared as `char s[6]={"H","e","l","l","o"};` or as `char s[6]="Hello";`<br>
+* If array dimension is specified by a variable, further checks cannot be made (e.g. during inizialization)<br><br>
 * Struct can be created as a list of variable declarations without inizialization
 * After defining a struct, a variable can be declared in two possible way:
   * as an usual declaration`struct struct_identifier identifier;`
@@ -224,8 +221,93 @@ _Printed Tree_
                     INT_CONSTANT 0
 
 ## Symbol Table
-**Next next step!!!**<br>
-Related files in `src` folder are a first shy try :)
+An hierarchical symbol table has been implemented.<br><br>
+For each variable, the following information are saved:
+* name
+* dimension
+* type
+* struct composition (only for struct variables)
+* if variable has been declared
+* if variable has been inizialized
+<br><br>
+
+For each function, the following information are saved:
+* name
+* return type
+* list of parameters
+* list of local variables
+
+_Example code_
+
+    struct Point
+    {
+    int x;
+    int y;
+    } punto1 = {1,5}, punto2, punto3[2] = {{1,2},{3,4}};
+    
+    int main ()
+    {
+        struct Line
+        {
+            int a;
+            int b;
+        } line1, line2;
+
+        punto2.x = 10;
+        punto2.y = 20;
+
+        punto1.x = punto1.y * 2;
+
+        return 0;
+    }
+
+_Symbol Table generated_
+
+    GLOBAL SYMBOL TABLE
+    Name            Kind            Type            Dimension
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    punto1          VAR             STRUCT Point    /
+    punto2          VAR             STRUCT Point    /
+    punto3          VAR             STRUCT Point    2
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    STRUCT Point
+    x               VAR             INT             /
+    y               VAR             INT             /
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    main            FUN             INT             /
+
+
+
+    MAIN SYMBOL TABLE
+    Name            Kind            Type            Dimension
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    line1           VAR             STRUCT Line     /
+    line2           VAR             STRUCT Line     /
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    STRUCT Line
+    a               VAR             INT             /
+    b               VAR             INT             /
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### Issue
+This symbol table, however, has one problem.<br>
+If a variable is declared before a struct and this variable has the same name of a variable inside the following struct, the program will generate a _segmentation fault_.<br>
+At the beginning, struct element variables are saved as global or local variables and only after, they are removed 
+and stored as struct elements inside symbol table. That cause the segmentation error, because our code will delete the first variable with specified name found.<br>
+A possible limitation to this problem could be the following.
+
+_What there is now in grammar.y_<br>
+`declarations: declaration | declarations declaration ;`
+
+_With what could be replaced_<br>
+`declarations: struct_declarations var_declarations`<br>
+`struct_declarations: struct_declarations struct_declaration`<br>
+`var_declarations: var_declarations var_declaration`
+
+This will limit the issue, but will not fully solve it. Declaration of two different struct with same variable name will generate anyway the segmentation fault.
+
+## Semantic checks
+**Next step!**
 
 ## Code generator
-**Will we get there???**
+**Last one!**

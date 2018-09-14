@@ -92,7 +92,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 25 "./src/grammar.y" /* yacc.c:1909  */
+#line 23 "./src/grammar.y" /* yacc.c:1909  */
 
     char *sval;
     List *list;

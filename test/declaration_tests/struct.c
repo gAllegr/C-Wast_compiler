@@ -8,6 +8,12 @@ struct Point
  
 int main ()
 {
+	struct Line
+	{
+		int a;
+		int b;
+	} line1, line2;
+
 	punto2.x = 10;
 	punto2.y = 20;
 

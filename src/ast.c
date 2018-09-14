@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "ast.h"
-#include "list.h"
+
 
 /* ===== Functions to build AST nodes ===== */
 
@@ -28,44 +29,15 @@ AST *new_AST_Const(ValType type, char *value)
     return ast;
 }
 
-AST *new_AST_Variable (char *name, int n, ValType type)
+AST *new_AST_Variable (char *name, int n, ValType type, struct_info *s_info, int declared, int inizialized)
 {
     AST_Variable *ast_variable = malloc(sizeof(AST_Variable));
-    ast_variable->name = name;
-    ast_variable->n = n;
-    ast_variable->type = type;
+    ast_variable->sym_variable = new_SymTab_Variables(name,n,type,s_info,declared,inizialized);
+    
 
     AST *ast = malloc(sizeof(AST));
     ast->type = N_VARIABLE;
     ast->ast_variable = ast_variable;
-
-    return ast;
-}
-
-AST *new_AST_Struct (char *name, ValType type, List *declarations)
-{
-    AST_Struct *ast_struct = malloc(sizeof(AST_Struct));
-    ast_struct->name = name;
-    ast_struct->type = type;
-    ast_struct->declarations = declarations;
-
-    AST *ast = malloc(sizeof(AST));
-    ast->type = N_STRUCT;
-    ast->ast_struct = ast_struct;
-
-    return ast;
-}
-
-AST *new_AST_Var_Struct (AST *def_struct, char *name, int n)
-{
-    AST_Var_Struct *ast_var_struct = malloc(sizeof(AST_Var_Struct));
-    ast_var_struct->def_struct = def_struct;
-    ast_var_struct->name = name;
-    ast_var_struct->n = n;
-
-    AST *ast = malloc(sizeof(AST));
-    ast->type = N_VAR_STRUCT;
-    ast->ast_var_struct = ast_var_struct;
 
     return ast;
 }
@@ -177,12 +149,11 @@ AST *new_AST_List (List *list)
     return ast;
 }
 
-AST *new_AST_Def_Function (AST *func_name, AST *parameters, AST *body)
+AST *new_AST_Def_Function (AST *func_name)
 {
     AST_Def_Function *ast_def_func = malloc(sizeof(AST_Def_Function));
-    ast_def_func->func_name = func_name;
-    ast_def_func->parameters = parameters;
-    ast_def_func->body = body;
+    ast_def_func->sym_function = new_SymTab_Functions(func_name->ast_variable->sym_variable);
+    ast_def_func->body = NULL;
 
     AST *ast = malloc(sizeof(AST));
     ast->type = N_DEF_FUNCTION;
@@ -246,12 +217,12 @@ char *ast_type_name(AST *ast)
             }
             break;
         case N_VARIABLE:
-            switch(ast->ast_variable->type) {
+            switch(ast->ast_variable->sym_variable->type) {
                 case T_NULL:
                     return "VARIABLE (Unknown type)";
                     break;
                 case T_VOID:
-                    return "Error!!! VARIABLE (VOID type)";
+                    return "VARIABLE (VOID type)";
                     break;
                 case T_INT:
                     return "VARIABLE (INT type)";
@@ -262,13 +233,17 @@ char *ast_type_name(AST *ast)
                 case T_CHAR:
                     return "VARIABLE (CHAR type)";
                     break;
+                case T_STRUCT:
+                    if(ast->ast_variable->sym_variable->s_info == NULL)
+                        return "VARIABLE (STRUCT Unknown type)";
+                    else
+                    {
+                        char r[50];
+                        sprintf(r, "VARIABLE (STRUCT %s type)", ast->ast_variable->sym_variable->s_info->struct_name);
+                        return strdup(r);
+                    }
+                    break;
             }
-            break;
-        case N_STRUCT:
-            return "STRUCT Definition";
-            break;
-        case N_VAR_STRUCT:
-            return "STRUCT Variable";
             break;
         case N_UNARY_EXPR:
             switch(ast->ast_unary_expr->unary_type)
@@ -395,96 +370,98 @@ void free_ast(AST *ast)
 
     switch(ast->type) {
         case N_CONSTANT:
+//printf("I Const\n");
             if(ast->ast_constant->type == T_CHAR) free(ast->ast_constant->sval);
             free(ast->ast_constant);
+//printf("F Const\n");
             break;
         case N_VARIABLE:
-            free(ast->ast_variable->name);
+//printf("I Var\n");
             free(ast->ast_variable);
-            break;
-        case N_STRUCT:
-            free(ast->ast_struct->name);
-            free_ast_list(ast->ast_struct->declarations);
-            free(ast->ast_struct);
-            break;
-        case N_VAR_STRUCT:
-            free(ast->ast_var_struct->name);
-            free(ast->ast_var_struct);
+//printf("F Var\n");
             break;
         case N_UNARY_EXPR:
+//printf("I unary\n");
             free_ast(ast->ast_unary_expr->expression);
             free(ast->ast_unary_expr);
+//printf("F unary\n");            
             break;
         case N_BINARY_EXPR:
+//printf("I binary\n");
             free_ast(ast->ast_binary_expr->left);
             free_ast(ast->ast_binary_expr->right);
             free(ast->ast_binary_expr);
+//printf("F binary\n");            
             break;
         case N_ASSIGNMENT:
+//printf("I assign\n");
             free_ast(ast->ast_assign->variable);
             free_ast(ast->ast_assign->expression);
             free(ast->ast_assign);
+//printf("F assign\n");            
             break;
         case N_IF_STATEMENT:
+//printf("I if\n");
             free_ast(ast->ast_if_stat->condition);
             free_ast(ast->ast_if_stat->then_branch);
             free_ast(ast->ast_if_stat->else_branch);
             free(ast->ast_if_stat);
+//printf("F if\n");
             break;
         case N_FOR_STATEMENT:
+//printf("I for\n");
             free_ast_list(ast->ast_for_stat->init);
             free_ast(ast->ast_for_stat->condition);
             free_ast_list(ast->ast_for_stat->increment);
             free_ast(ast->ast_for_stat->loop);
             free(ast->ast_for_stat);
+//printf("F for\n");
             break;
         case N_RETURN_STATEMENT:
+//printf("I return\n");
             free_ast(ast->ast_return_stat->expression);
             free(ast->ast_return_stat);
+//printf("F return\n");
             break;
         case N_BUILTIN_STATEMENT:
+//printf("I builtin\n");
             free_ast(ast->ast_builtin_stat->content);
             free_ast_list(ast->ast_builtin_stat->variables);
             free(ast->ast_builtin_stat);
+//printf("F builtin\n");
             break;
         case N_LIST:
-            ;   // C grammar doesn't allow declarations after label
-            // clear N_STRUCT node only once, if present
-            List *l = ast->ast_list->list;
-            for(int i=0; i<list_length(l);i++)
-            {
-                AST *a = list_get(l,i);
-                // struct variable definition by assignment 
-                if(a->type == N_ASSIGNMENT && a->ast_assign->variable->type!=N_VARIABLE &&  a->ast_assign->variable->ast_var_struct->def_struct != NULL)
-                    free_ast(a->ast_assign->variable->ast_var_struct->def_struct);
-                // struct variable definition by simple declaration 
-                if(a->type == N_VAR_STRUCT && a->ast_var_struct->def_struct != NULL)
-                    free_ast(a->ast_var_struct->def_struct);
-            }
-            // free elements' list
-            free_ast_list(ast->ast_list->list);
+//printf("I list\n");
+            free_ast_list(ast->ast_list->list);         // free elements' list
             free(ast->ast_list);
+//printf("F List\n");
             break;
         case N_DEF_FUNCTION:
-            free_ast(ast->ast_def_function->func_name);
-            free_ast(ast->ast_def_function->parameters);
+//printf("I def func\n");
             free_ast(ast->ast_def_function->body);
             free(ast->ast_def_function);
+//printf("F def func\n");
             break;
         case N_CALL_FUNCTION:
+//printf("I call func\n");
             free_ast(ast->ast_call_function->func_name);
             free_ast_list(ast->ast_call_function->arguments);
             free(ast->ast_call_function);
+//printf("F call func\n");
             break;
         case N_BODY:
+//printf("I body\n");
             free_ast_list(ast->ast_body->declarations);
             free_ast_list(ast->ast_body->statements);
             free(ast->ast_body);
+//printf("F body\n");
             break;
         case N_ROOT:
+//printf("I root\n");
             free_ast_list(ast->ast_root->global_declaration);
             free_ast_list(ast->ast_root->functions);
             free(ast->ast_root);
+//printf("F root\n");
             break;
         default:
             printf("Could not free syntax tree with type: %s\n", ast_type_name(ast));
@@ -518,36 +495,20 @@ void print_ast(AST *ast, int indent)
             }
             break;
         case N_VARIABLE:
-            if(ast->ast_variable->n==-1)
-                printf("%s %s\n", ast_type_name(ast), ast->ast_variable->name);
+            if(ast->ast_variable->sym_variable->n==-1)
+                printf("%s %s\n", ast_type_name(ast), ast->ast_variable->sym_variable->name);
             else
-                printf("%s %s[%d]\n", ast_type_name(ast), ast->ast_variable->name, ast->ast_variable->n);
-            break;
-        case N_STRUCT:
-            printf("%s %s\n", ast_type_name(ast), ast->ast_struct->name);
-
-            List *struct_decl = ast->ast_struct->declarations;
-            for(int i=0; i<list_length(struct_decl);i++)
-            {
-                print_ast(list_get(struct_decl,i), indent+4);
-            }
-
-            break;
-        case N_VAR_STRUCT:
-            if(ast->ast_var_struct->n==-1)
-                printf("%s NAME: %s\n", ast_type_name(ast), ast->ast_var_struct->name);
-            else
-                printf("%s NAME: %s[%d]\n", ast_type_name(ast), ast->ast_var_struct->name, ast->ast_var_struct->n);
+                printf("%s %s[%d]\n", ast_type_name(ast), ast->ast_variable->sym_variable->name, ast->ast_variable->sym_variable->n);
             
-            for (int i=0; i<indent; i++) { printf(" "); }
-            if(ast->ast_var_struct->def_struct->ast_struct->name != NULL)
+            if(ast->ast_variable->sym_variable->type == T_STRUCT && ast->ast_variable->sym_variable->s_info != NULL)
             {
-                printf("%s TYPE: STRUCT %s\n", ast_type_name(ast), ast->ast_var_struct->def_struct->ast_struct->name);
-                print_ast(ast->ast_var_struct->def_struct, indent+4);
+                List *elements = ast->ast_variable->sym_variable->s_info->struct_element->items[0];
+                for(int i=0; i<list_length(elements);i++)
+                {
+                    SymTab_Variables *s = list_get(elements,i);
+                    print_ast(new_AST_Variable(s->name,s->n,s->type,s->s_info,s->declared,s->inizialized),indent+4);
+                }
             }
-            else
-                printf("%s TYPE: STRUCT Unknown\n", ast_type_name(ast));
-
             break;
         case N_UNARY_EXPR:
             printf("%s\n", ast_type_name(ast));
@@ -637,11 +598,17 @@ void print_ast(AST *ast, int indent)
             break;
         case N_DEF_FUNCTION:
             printf("%s NAME\n", ast_type_name(ast));
-            print_ast(ast->ast_def_function->func_name,indent+4);
+            SymTab_Variables *f_name = ast->ast_def_function->sym_function->func_name;
+            print_ast(new_AST_Variable(f_name->name,f_name->n,f_name->type,f_name->s_info,f_name->declared,f_name->inizialized),indent+4);
 
             for (int i=0; i<indent; i++) { printf(" "); }
             printf("%s PARAMETERS\n", ast_type_name(ast));
-            print_ast(ast->ast_def_function->parameters,indent+4);
+            List *f_param = ast->ast_def_function->sym_function->parameters;
+            for(int i=0; i<list_length(f_param);i++)
+            {
+                SymTab_Variables *p = list_get(f_param,i);
+                print_ast(new_AST_Variable(p->name,p->n,p->type,p->s_info,p->declared,p->inizialized),indent+4);
+            }
 
             for (int i=0; i<indent; i++) { printf(" "); }
             printf("%s BODY\n", ast_type_name(ast));

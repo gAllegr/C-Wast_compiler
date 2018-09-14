@@ -1,7 +1,6 @@
 %{
 	/* CONTENT TO BE COPIED AT THE BEGINNING */
 
-
 	/* include directives */
 	#include <stdio.h>
 	#include <stdlib.h>
@@ -9,17 +8,16 @@
 	#include "../src/utils.h"
     #include "../src/ast.h"
     #include "../src/list.h"
+    #include "../src/symtab.h"
 
 	int yylex();
     void yyerror (const char *s);
     /* Variable needed for debugging */
 //	int yydebug = 1;
 
-    // Abstract Syntax Tree
-    AST *ast;
+    AST *ast;               // Abstract Syntax Tree
+    SymTab *symtab;         // Symbol Table
 %}
-
-%expect 1
 
 // Definition of possible rule types
 %union {
@@ -108,10 +106,14 @@ declaration: var_type var_decl SEMICOLON
                         AST *obj = list_get($2,i);
                         switch(obj->type) {
                             case N_VARIABLE:
-                                obj->ast_variable->type = $1;
+                                obj->ast_variable->sym_variable->type = $1;
+                                // Insert declared variables in Symbol Table
+                                insert_var(symtab, obj->ast_variable->sym_variable, scope);
                                 break;
                             case N_ASSIGNMENT:
-                                obj->ast_assign->variable->ast_variable->type = $1;
+                                obj->ast_assign->variable->ast_variable->sym_variable->type = $1;
+                                // Insert declared variables in Symbol Table
+                                insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
                                 break;
                         }
                         $2->items[i] = obj;
@@ -120,6 +122,24 @@ declaration: var_type var_decl SEMICOLON
                     $$ = $2;
                 }
             | struct_declaration SEMICOLON
+                {
+                    for(int i=0; i<list_length($1);i++)
+                    {
+                        AST *obj = list_get($1,i);
+                        switch(obj->type) {
+                            case N_VARIABLE:
+                                // Insert declared variables in Symbol Table
+                                insert_var(symtab, obj->ast_variable->sym_variable, scope);
+                                break;
+                            case N_ASSIGNMENT:
+                                // Insert declared variables in Symbol Table
+                                insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
+                                break;
+                        }
+                    }
+
+                    $$ = $1;
+                }
             ;
 
 /* Recursion allows to define both simple declaration and declaration with assignment */
@@ -155,25 +175,42 @@ struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES
                     {
                         if($6 != NULL)
                         {
-                            AST *struct_def = new_AST_Struct ($2->ast_variable->name, $1, $4);
+                            int i,pos;
+                            SymTab_Variables *v;
+
+                            List *elements = convert($4);
+                            // delete struct elements from global or local variables in symbol table
+                            for(i=0;i<list_length(elements);i++)
+                            {
+                                v = list_get(elements,i);
+                                pos = lookup(symtab, v->name, scope);
+                                remove_symtab_variable(symtab, scope, pos);
+                            }
 
                             AST *a;
-                            for(int i=0; i<list_length($6);i++)
+                            for(i=0; i<list_length($6);i++)
                             {
                                 a = list_get($6,i);
                                 if(a->type == N_VARIABLE)
                                 {
-                                    a = new_AST_Var_Struct (struct_def, a->ast_variable->name, a->ast_variable->n);
-                                    $6->items[i] = a;
+                                    int n = a->ast_variable->sym_variable->n;
+                                    List *e = prepare_struct_elements(n, elements);
+
+                                    a->ast_variable->sym_variable->s_info = new_struct_info($2->ast_variable->sym_variable->name, e);
+                                    a->ast_variable->sym_variable->type = $1;
                                 }
                                 
                                 if(a->type == N_ASSIGNMENT)
                                 {
-                                    a->ast_assign->variable = new_AST_Var_Struct (struct_def, a->ast_assign->variable->ast_variable->name, a->ast_assign->variable->ast_variable->n);
-                                    $6->items[i] = a;
+                                    int n = a->ast_assign->variable->ast_variable->sym_variable->n;
+                                    List *e = prepare_struct_elements(n, elements);
+
+                                    a->ast_assign->variable->ast_variable->sym_variable->s_info = new_struct_info($2->ast_variable->sym_variable->name, e);
+                                    a->ast_assign->variable->ast_variable->sym_variable->type = $1;
                                 }
                             }
                         }
+
                         $$ = $6;
                     }
                   ;
@@ -226,10 +263,24 @@ functions: func_definition
          ;
 
 /* Function definition */
-func_definition: var_type identifier O_ROUND_BRACES argument_list C_ROUND_BRACES O_CURLY_BRACES body C_CURLY_BRACES
+func_definition: var_type identifier
+                 {
+                    $2->ast_variable->sym_variable->type = $1;
+                    $<node>$ = new_AST_Def_Function($2);
+                    // Insert declared function in Symbol Table
+                    insert_fun(symtab, $<node>$->ast_def_function->sym_function);
+                    // Update scope
+                    scope = $<node>$->ast_def_function->sym_function->func_name->name;
+                 }
+                 O_ROUND_BRACES argument_list C_ROUND_BRACES O_CURLY_BRACES body C_CURLY_BRACES
                     {
-                        $2->ast_variable->type = $1;
-                        $$ = new_AST_Def_Function($2, $4, $7);
+                        if($5 != NULL) 
+                        {
+                            $<node>3->ast_def_function->sym_function->parameters = convert($5->ast_list->list);
+                            update_par(symtab, $<node>3->ast_def_function->sym_function->parameters, scope);
+                        }
+                        $<node>3->ast_def_function->body = $8;
+                        $$ = $<node>3;
                     }
                ;
 
@@ -259,8 +310,13 @@ parameter_list: parameter_declaration
 /* Single parameter within definition can be a variable type, or a variable type followed by the identifier */
 parameter_declaration: var_type identifier
                         {
-                            $2->ast_variable->type = $1;
+                            $2->ast_variable->sym_variable->type = $1;
                             $$ = $2;
+                        }
+                     | STRUCT identifier identifier
+                        {
+                            $3->ast_variable->sym_variable->type = $1;
+                            $3->ast_variable->sym_variable->s_info = new_struct_info($2->ast_variable->sym_variable->name, NULL);
                         }
                      ;
 
@@ -535,13 +591,11 @@ return_stat: RETURN
            ;
 
 /* Variables can be of integer, float or char type
-Functions can be also void
-For variables defined starting from a struct, there is another type */
+Functions can be also void */
 var_type: VOID
         | INT
         | FLOAT
         | CHAR
-        | STRUCT
         ;
 
 /* The identifier can be :
@@ -550,39 +604,40 @@ var_type: VOID
 - a dotted identifier for struct variables */
 identifier: IDENTIFIER
             {
-                $$ = new_AST_Variable($1, -1, T_NULL);
+                $$ = new_AST_Variable($1, -1, T_NULL, NULL, 0, 0);
             }
           | identifier O_SQUARE_BRACES ICONST C_SQUARE_BRACES
             {
-                $1->ast_variable->n = atoi($3);
+                $1->ast_variable->sym_variable->n = atoi($3);
                 $$ = $1;
             }
           | identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
             {
-                // Search $3 value in ST and save in "n" variable
-                //$1->ast_variable->n = value_$3;
+                // We don't save identifiers' value, so we don't know the array dimension
+                $1->ast_variable->sym_variable->n = -2;
+                $$ = $1;
             }
           | identifier DOT identifier
             {
                 char c[50];
                 char *c1,*c2;
                 // name+dimension/index of first identifier
-                if($1->ast_variable->n == -1) c1 = $1->ast_variable->name;
+                if($1->ast_variable->sym_variable->n == -1) c1 = $1->ast_variable->sym_variable->name;
                 else
                 {
-                    sprintf(c, "%s[%d]", $1->ast_variable->name, $1->ast_variable->n);
+                    sprintf(c, "%s[%d]", $1->ast_variable->sym_variable->name, $1->ast_variable->sym_variable->n);
                     c1 = c;
                 }
                 // name+dimension/index of second identifier
-                if($3->ast_variable->n == -1) c2 = $3->ast_variable->name;
+                if($3->ast_variable->sym_variable->n == -1) c2 = $3->ast_variable->sym_variable->name;
                 else
                 {
-                    sprintf(c, "%s[%d]", $3->ast_variable->name, $3->ast_variable->n);
+                    sprintf(c, "%s[%d]", $3->ast_variable->sym_variable->name, $3->ast_variable->sym_variable->n);
                     c2 = c;
                 }
                 // concat identifiers and use it as name for AST *var_struct
                 c1 = concat(3, "", c1,$2,c2);
-                $$ = new_AST_Var_Struct(new_AST_Struct(NULL, T_STRUCT, NULL), c1, $1->ast_variable->n);
+                $$ = new_AST_Variable (c1, $1->ast_variable->sym_variable->n, T_STRUCT, NULL, 0, 0);
             }
           ;
 
@@ -634,28 +689,26 @@ void yyerror (const char *s)
 int main (void)
 {
 	// initialize symbol table
-    //	init_hash_table();
+    symtab = init_symtab();
+    scope = "GLOBAL";
 
 	int result = yyparse();
 	if(result==0)
     {
         printf("\nCORRECT SYNTAX! \\^.^/ \n");
-        printf("Now I'll print the abstract syntax tree! :P\n\n");
+        printf("\n\nNow I'll print the abstract syntax tree!\n\n");
         print_ast(ast,0); printf("\n");
 
-        /* other stuff must be added */
+        printf("\n\nNow I'll print the symbol table!\n\n");
+        print_symtab(symtab);
+
+        /* other stuff (code_gen) */
 
         printf("Now I'll free memory occupied by abstract syntax tree!\n");
         free_ast(ast);
         printf("Memory is free!\n\n");
     }
 	else printf("\nWRONG SYNTAX! ç.ç\n");
-
-	// symbol table dump
-    /*	yyout = fopen("symtab_dump.out w");
-	symtab_dump(yyout);
-	fclose(yyout);	
-    */
 
     return result;
 }
