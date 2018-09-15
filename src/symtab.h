@@ -62,7 +62,7 @@ void print_symfun(SymTab_Functions* symfun);
 void print_symvar(SymTab_Variables *symvar,char *kind, List *struct_infos);
 void print_struct_info(List *struct_infos);
 
-int lookup(SymTab *symtab, char *name, char *scope);
+int lookup(SymTab *symtab, char *name, char *scope, int *where);
 void remove_symtab_variable(SymTab *symtab, char *scope, int pos);
 
 #endif

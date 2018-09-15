@@ -370,98 +370,70 @@ void free_ast(AST *ast)
 
     switch(ast->type) {
         case N_CONSTANT:
-//printf("I Const\n");
             if(ast->ast_constant->type == T_CHAR) free(ast->ast_constant->sval);
             free(ast->ast_constant);
-//printf("F Const\n");
             break;
         case N_VARIABLE:
-//printf("I Var\n");
             free(ast->ast_variable);
-//printf("F Var\n");
             break;
         case N_UNARY_EXPR:
-//printf("I unary\n");
             free_ast(ast->ast_unary_expr->expression);
-            free(ast->ast_unary_expr);
-//printf("F unary\n");            
+            free(ast->ast_unary_expr);      
             break;
         case N_BINARY_EXPR:
-//printf("I binary\n");
             free_ast(ast->ast_binary_expr->left);
             free_ast(ast->ast_binary_expr->right);
             free(ast->ast_binary_expr);
-//printf("F binary\n");            
             break;
         case N_ASSIGNMENT:
-//printf("I assign\n");
             free_ast(ast->ast_assign->variable);
             free_ast(ast->ast_assign->expression);
             free(ast->ast_assign);
-//printf("F assign\n");            
             break;
         case N_IF_STATEMENT:
-//printf("I if\n");
             free_ast(ast->ast_if_stat->condition);
             free_ast(ast->ast_if_stat->then_branch);
             free_ast(ast->ast_if_stat->else_branch);
             free(ast->ast_if_stat);
-//printf("F if\n");
             break;
         case N_FOR_STATEMENT:
-//printf("I for\n");
             free_ast_list(ast->ast_for_stat->init);
             free_ast(ast->ast_for_stat->condition);
             free_ast_list(ast->ast_for_stat->increment);
             free_ast(ast->ast_for_stat->loop);
             free(ast->ast_for_stat);
-//printf("F for\n");
             break;
         case N_RETURN_STATEMENT:
-//printf("I return\n");
             free_ast(ast->ast_return_stat->expression);
             free(ast->ast_return_stat);
-//printf("F return\n");
             break;
         case N_BUILTIN_STATEMENT:
-//printf("I builtin\n");
             free_ast(ast->ast_builtin_stat->content);
             free_ast_list(ast->ast_builtin_stat->variables);
             free(ast->ast_builtin_stat);
-//printf("F builtin\n");
             break;
         case N_LIST:
-//printf("I list\n");
             free_ast_list(ast->ast_list->list);         // free elements' list
             free(ast->ast_list);
-//printf("F List\n");
             break;
         case N_DEF_FUNCTION:
-//printf("I def func\n");
             free_ast(ast->ast_def_function->body);
             free(ast->ast_def_function);
-//printf("F def func\n");
             break;
         case N_CALL_FUNCTION:
-//printf("I call func\n");
             free_ast(ast->ast_call_function->func_name);
             free_ast_list(ast->ast_call_function->arguments);
             free(ast->ast_call_function);
-//printf("F call func\n");
             break;
         case N_BODY:
-//printf("I body\n");
             free_ast_list(ast->ast_body->declarations);
             free_ast_list(ast->ast_body->statements);
             free(ast->ast_body);
-//printf("F body\n");
             break;
         case N_ROOT:
-//printf("I root\n");
             free_ast_list(ast->ast_root->global_declaration);
             free_ast_list(ast->ast_root->functions);
             free(ast->ast_root);
-//printf("F root\n");
             break;
         default:
             printf("Could not free syntax tree with type: %s\n", ast_type_name(ast));

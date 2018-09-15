@@ -100,6 +100,13 @@ declarations: declaration
 /* Variable declaration or struct declaration */
 declaration: var_type var_decl SEMICOLON
                 {
+                    // semantic check
+                    if($1==T_VOID)
+                    {
+                        yyerror("Variables cannot have void type");
+                        YYABORT;  
+                    } 
+
                     int size = list_length($2),i;
                     // update variable nodes with associated type
                     for(i=0;i<size;i++) {
@@ -175,19 +182,30 @@ struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES
                     {
                         if($6 != NULL)
                         {
-                            int i,pos;
+                            int i,pos,where;
+                            AST *a;
                             SymTab_Variables *v;
+
+                            // semantic check
+                            for(i=0;i<list_length($4);i++)
+                            {
+                                a = list_get($4,i);
+                                if(a->type == N_ASSIGNMENT) 
+                                {
+                                    yyerror("Struct elements cannot be inizialized");
+                                    YYABORT;
+                                }
+                            }
 
                             List *elements = convert($4);
                             // delete struct elements from global or local variables in symbol table
                             for(i=0;i<list_length(elements);i++)
                             {
                                 v = list_get(elements,i);
-                                pos = lookup(symtab, v->name, scope);
+                                pos = lookup(symtab, v->name, scope, &where);
                                 remove_symtab_variable(symtab, scope, pos);
                             }
 
-                            AST *a;
                             for(i=0; i<list_length($6);i++)
                             {
                                 a = list_get($6,i);
@@ -310,11 +328,29 @@ parameter_list: parameter_declaration
 /* Single parameter within definition can be a variable type, or a variable type followed by the identifier */
 parameter_declaration: var_type identifier
                         {
+                            // semantic check
+                            if($1==T_VOID)
+                            {
+                                yyerror("Variables cannot have void type");
+                                YYABORT;  
+                            } 
+
                             $2->ast_variable->sym_variable->type = $1;
                             $$ = $2;
                         }
                      | STRUCT identifier identifier
                         {
+                            int where;
+                            // semantic check
+                            if(lookup(symtab, $2->ast_variable->sym_variable->name, scope,&where) == -1)
+                            {
+                                char error[50];
+                                char *struct_name = concat(2, " ", "STRUCT",$2->ast_variable->sym_variable->name);
+                                sprintf(error,"%s has not been defined", strdup(struct_name));
+                                yyerror(error);
+                                YYABORT; 
+                            }
+
                             $3->ast_variable->sym_variable->type = $1;
                             $3->ast_variable->sym_variable->s_info = new_struct_info($2->ast_variable->sym_variable->name, NULL);
                         }
@@ -355,6 +391,68 @@ statement: SEMICOLON                    {$$ = NULL;}
 /* Function calling */
 func_call: identifier O_ROUND_BRACES call_args C_ROUND_BRACES
             {
+                int i, pos, where;
+                AST *node;
+                SymTab_Functions *f;
+                SymTab_Variables *a, *p;
+
+                // semantic check
+                // check if function has been defined
+                if(lookup(symtab, $1->ast_variable->sym_variable->name, scope,&where) == -1)
+                {
+                    char error[50];
+                    char *function_name = concat(2, " ", "FUNCTION",$1->ast_variable->sym_variable->name);
+                    sprintf(error,"%s has not been defined", strdup(function_name));
+                    yyerror(error);
+                    YYABORT; 
+                }
+
+                // check if arguments have been defined and update their type in AST
+                for(i=0; i<list_length($3);i++)
+                {
+                    node = list_get($3,i);
+                    pos = lookup(symtab, node->ast_variable->sym_variable->name, scope, &where);
+                    if(pos == -1)
+                    {
+                        // argument variable not declared before
+                        char error[60];
+                        sprintf(error,"Argument variable n.%d has not been declared", i+1);
+                        yyerror(error);
+                        YYABORT;  
+                    }
+                    else
+                    {
+                        update_node_type(node, symtab, where, pos);
+                        $3->items[i] = node;
+                    }
+                }       
+
+                // check if arguments and parameters have same number
+                pos = lookup(symtab, $1->ast_variable->sym_variable->name, scope,&where);
+                f = symtab->functions->items[pos];
+                List *par = f->parameters;
+                List *args = convert($3);
+                if(list_length(args)!=list_length(par))
+                {
+                    yyerror("Number of arguments and parameters doesn't match");
+                    YYABORT;  
+                } 
+
+                // check if arguments and parameters have same type
+                for(int i=0;i<list_length(par);i++)
+                {
+                    a = list_get(args,i);
+                    p = list_get(par,i);
+
+                    if(a->type != p->type)
+                    {
+                        char error[60];
+                        sprintf(error,"Type of n.%d argument and parameter doesn't match", i+1);
+                        yyerror(error);
+                        YYABORT;  
+                    } 
+                }
+
                 $$ = new_AST_Call_Function ($1,$3);
             }
          ;

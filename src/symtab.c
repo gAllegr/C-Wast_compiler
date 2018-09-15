@@ -257,8 +257,8 @@ void print_symtab(SymTab *symtab)
     }
 }
 
-/* Lookup function returns both position and where the variable is within the Symbol Table */
-int lookup(SymTab *symtab, char *name, char *scope)
+/* Lookup function returns position of the variable within the Symbol Table */
+int lookup(SymTab *symtab, char *name, char *scope, int *where)
 {
     int i, pos=-1;
     SymTab_Variables *v;
@@ -269,7 +269,19 @@ int lookup(SymTab *symtab, char *name, char *scope)
         {
             v = list_get(symtab->global_variables,i);
 
-            if(name == v->name)
+            if(strcmp(name,v->name) == 0)
+            {
+                pos = i;
+                *where = 0;
+                break;
+            }
+        }
+
+        SymTab_Functions *f;
+        for(i=0; i<list_length(symtab->functions);i++)
+        {   
+            f = list_get(symtab->functions,i);
+            if(strcmp(name,f->func_name->name)==0)
             {
                 pos = i;
                 break;
@@ -282,16 +294,17 @@ int lookup(SymTab *symtab, char *name, char *scope)
         for(int i=0; i<list_length(symtab->functions);i++)
         {
             f = list_get(symtab->functions,i);
-            if(scope == f->func_name->name)
+            if(strcmp(scope,f->func_name->name) == 0)
             {
                 // check if name is a parameter name
-                for(i=0; i<list_length(f->parameters);i++)
+                for(int j=0; j<list_length(f->parameters);j++)
                 {
-                    v = list_get(f->parameters,i);
+                    v = list_get(f->parameters,j);
 
-                    if(name == v->name)
+                    if(strcmp(name,v->name) == 0)
                     {
-                        pos = i;
+                        pos = j;
+                        *where = 1;
                         break;
                     }
                 }
@@ -299,19 +312,20 @@ int lookup(SymTab *symtab, char *name, char *scope)
                 if(pos==-1)         // name is not a parameter
                 {
                     // check if name is a local variable name
-                    for(i=0; i<list_length(f->local_variables);i++)
+                    for(int j=0; j<list_length(f->local_variables);j++)
                     {
-                        v = list_get(f->local_variables,i);
+                        v = list_get(f->local_variables,j);
 
-                        if(name == v->name)
+                        if(strcmp(name,v->name) == 0)
                         {
-                            pos = i;
+                            pos = j;
+                            *where = 2;
                             break;
                         }
                     }
                     
                     // name is not a local variable
-                    if(pos==-1) pos=lookup(symtab, name, "GLOBAL");
+                    if(pos==-1) pos=lookup(symtab, name, "GLOBAL",&*where);
                 }
             }
         }

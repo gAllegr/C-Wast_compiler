@@ -14,4 +14,7 @@ List *convert(List *start);
 /* ===== Prepare List *struct_element needed to create struct_info ===== */
 List *prepare_struct_elements(int n, List *elements);
 
+/* ===== Update node type in AST using Symbol Table ===== */
+void *update_node_type(AST *node, SymTab *symtab, int where, int pos);
+
 #endif

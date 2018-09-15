@@ -10,16 +10,20 @@ char* concat(int n_token, char *sep, char *token,...)
 {
 	int i;
 	va_list vl;
+	char concatenated[200] = "", *ret;
+
+	strcat(concatenated,token);
 	va_start(vl,token);
 
-	char *concatenated = token;
 	for(i=1; i<n_token; i++)
 	{
-		concatenated = strcat(strcat(concatenated,sep),va_arg(vl,char *));
+		strcat(concatenated,sep);
+		strcat(concatenated,va_arg(vl,char *));
 	}
 
 	va_end(vl);
-	return concatenated;
+	ret = concatenated;
+	return ret;
 }
 
 /* ===== Convert list of AST into list of SymTab_Variables ===== */
@@ -68,5 +72,30 @@ List *prepare_struct_elements(int n, List *elements)
 	return e;
 }
 
+/* ===== Update node type in AST using Symbol Table ===== */
+void *update_node_type(AST *node, SymTab *symtab, int where, int pos)
+{
+	int f_pos;
+	SymTab_Functions *f;
+    SymTab_Variables *a;
 
-
+	// retrieve variable type from Symbol Table
+	switch(where)
+	{
+		case 0:     // variable is global
+			a = list_get(symtab->global_variables,pos);
+			break;
+		case 1:     // variable is a parameter
+			f_pos = lookup(symtab, scope, "GLOBAL",&where);
+			f = symtab->functions->items[f_pos];
+			a = list_get(f->parameters,pos);
+			break;
+		case 2:     // variable is local
+			f_pos = lookup(symtab, scope, "GLOBAL",&where);
+			f = symtab->functions->items[f_pos];
+			a = list_get(f->local_variables,pos);
+			break;
+	}
+	// update type in AST
+	node->ast_variable->sym_variable->type = a->type;
+}
