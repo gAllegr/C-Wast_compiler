@@ -28,8 +28,6 @@ typedef struct SymTab_Variables {
     int n;                          // array dimension, -1 for simple variables and -2 if we can't get array dimension
     ValType type;
     struct_info *s_info;            // !NULL only if variable is a struct
-
-    int declared;
     int inizialized;    
 } SymTab_Variables;
 
@@ -47,11 +45,12 @@ typedef struct SymTab {
 } SymTab;
 
 /* Functions */
-SymTab_Variables *new_SymTab_Variables (char *name, int n, ValType type, struct_info *s_info, int declared, int inizialized);
+SymTab_Variables *new_SymTab_Variables (char *name, int n, ValType type, struct_info *s_info, int inizialized);
 SymTab_Functions *new_SymTab_Functions (SymTab_Variables *func_name);
 struct_info *new_struct_info (char *name, List *elements);
 
 SymTab *init_symtab();
+SymTab_Variables *get_symtab_var(SymTab *symtab, char *scope, int pos, int where);
 
 void insert_var(SymTab *symtab, SymTab_Variables *sym_var, char *scope);
 void insert_fun(SymTab *symtab, SymTab_Functions *sym_fun);
@@ -63,6 +62,7 @@ void print_symvar(SymTab_Variables *symvar,char *kind, List *struct_infos);
 void print_struct_info(List *struct_infos);
 
 int lookup(SymTab *symtab, char *name, char *scope, int *where);
+void check_redeclaration(SymTab *symtab, char *name, char *scope);
 void remove_symtab_variable(SymTab *symtab, char *scope, int pos);
 
 #endif

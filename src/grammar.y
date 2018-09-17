@@ -15,9 +15,11 @@
     /* Variable needed for debugging */
 //	int yydebug = 1;
 
-    AST *ast;               // Abstract Syntax Tree
-    SymTab *symtab;         // Symbol Table
+    AST *ast;                       // Abstract Syntax Tree
+    SymTab *symtab;                 // Symbol Table
+    int declaration_state = -1;     // used for semantic check on assignment
 %}
+%error-verbose
 
 // Definition of possible rule types
 %union {
@@ -100,24 +102,31 @@ declarations: declaration
 /* Variable declaration or struct declaration */
 declaration: var_type var_decl SEMICOLON
                 {
-                    // semantic check
+                    // SEMANTIC CHECK: variable type
                     if($1==T_VOID)
                     {
                         yyerror("Variables cannot have void type");
                         YYABORT;  
                     } 
 
-                    int size = list_length($2),i;
+                    int size = list_length($2),i,pos,where;
+                    AST *obj;
                     // update variable nodes with associated type
                     for(i=0;i<size;i++) {
-                        AST *obj = list_get($2,i);
+                        obj = list_get($2,i);
                         switch(obj->type) {
                             case N_VARIABLE:
+                                // SEMANTIC CHECK: variable redeclaration
+                                check_redeclaration(symtab, obj->ast_variable->sym_variable->name, scope);
+
                                 obj->ast_variable->sym_variable->type = $1;
                                 // Insert declared variables in Symbol Table
                                 insert_var(symtab, obj->ast_variable->sym_variable, scope);
                                 break;
                             case N_ASSIGNMENT:
+                                // SEMANTIC CHECK: variable redeclaration
+                                check_redeclaration(symtab, obj->ast_assign->variable->ast_variable->sym_variable->name, scope);
+
                                 obj->ast_assign->variable->ast_variable->sym_variable->type = $1;
                                 // Insert declared variables in Symbol Table
                                 insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
@@ -125,6 +134,17 @@ declaration: var_type var_decl SEMICOLON
                         }
                         $2->items[i] = obj;
                     }
+
+                    // SEMANTIC CHECK: variable content, if it's inizialized
+                    for(i=0; i<list_length($2);i++)
+                    {
+                        obj = list_get($2,i);
+                        if(obj->type == N_ASSIGNMENT)
+                        {
+                            check_decl_assignment(obj, symtab, scope);
+                        }
+                    }
+                    
                     // associate updated list at head of rule
                     $$ = $2;
                 }
@@ -154,6 +174,13 @@ var_decl: simple_declaration
             {
                 if($1 != NULL)
                 {
+                    // SEMANTIC CHECK: array variable dimension must be a constant
+                    if ($1->ast_variable->sym_variable->n == -2)
+                    {
+                        yyerror("Array dimension must be a constant");
+                        YYABORT;
+                    }
+
                     List *var_list = list_new();
                     list_append(var_list, $1);
                     $$ = var_list;
@@ -162,6 +189,13 @@ var_decl: simple_declaration
             }
         | assignment
             {
+                // SEMANTIC CHECK: array variable dimension must be a constant
+                if ($1->ast_assign->variable->ast_variable->sym_variable->n == -2)
+                {
+                    yyerror("Array dimension must be a constant");
+                    YYABORT;
+                }
+
                 List *var_list = list_new();
                 list_append(var_list, $1);
                 $$ = var_list;
@@ -186,7 +220,7 @@ struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES
                             AST *a;
                             SymTab_Variables *v;
 
-                            // semantic check
+                            // SEMANTIC CHECK: struct elements cannot be inizialized
                             for(i=0;i<list_length($4);i++)
                             {
                                 a = list_get($4,i);
@@ -234,13 +268,7 @@ struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES
                   ;
 
 /* inizialization_list is used to inizializate an array or a struct */
-inizialization_list: identifier
-                        {
-                            List *init_list = list_new();
-                            list_append(init_list, $1);
-                            $$ = init_list;
-                        }
-                   | const
+inizialization_list: const
                         {
                             List *init_list = list_new();
                             list_append(init_list, $1);
@@ -249,7 +277,7 @@ inizialization_list: identifier
                    | STRCONST
                         {
                             List *init_list = list_new();
-                            list_append(init_list, $1);
+                            list_append(init_list, new_AST_Const(3,$1));
                             $$ = init_list;
                         }
                    | O_CURLY_BRACES inizialization_list COMMA inizialization_list C_CURLY_BRACES
@@ -290,14 +318,26 @@ func_definition: var_type identifier
                     // Update scope
                     scope = $<node>$->ast_def_function->sym_function->func_name->name;
                  }
-                 O_ROUND_BRACES argument_list C_ROUND_BRACES O_CURLY_BRACES body C_CURLY_BRACES
+                 O_ROUND_BRACES argument_list
+                 {
+                    if($5 != NULL) 
                     {
-                        if($5 != NULL) 
+                        List *list_parameters = convert($5->ast_list->list);
+                        SymTab_Variables *v;
+                        // set all parameters as inizialized
+                        for(int i=0; i<list_length(list_parameters);i++)
                         {
-                            $<node>3->ast_def_function->sym_function->parameters = convert($5->ast_list->list);
-                            update_par(symtab, $<node>3->ast_def_function->sym_function->parameters, scope);
+                            v = list_get(list_parameters,i);
+                            v->inizialized = 1;
+                            list_parameters->items[i] = v;
                         }
-                        $<node>3->ast_def_function->body = $8;
+                        $<node>3->ast_def_function->sym_function->parameters = list_parameters;
+                        update_par(symtab, $<node>3->ast_def_function->sym_function->parameters, scope);
+                    }
+                 }
+                 C_ROUND_BRACES O_CURLY_BRACES body C_CURLY_BRACES
+                    {
+                        $<node>3->ast_def_function->body = $9;
                         $$ = $<node>3;
                     }
                ;
@@ -328,7 +368,7 @@ parameter_list: parameter_declaration
 /* Single parameter within definition can be a variable type, or a variable type followed by the identifier */
 parameter_declaration: var_type identifier
                         {
-                            // semantic check
+                            // SEMANTIC CHECK: paramenters are variables, cannot have void type
                             if($1==T_VOID)
                             {
                                 yyerror("Variables cannot have void type");
@@ -338,27 +378,11 @@ parameter_declaration: var_type identifier
                             $2->ast_variable->sym_variable->type = $1;
                             $$ = $2;
                         }
-                     | STRUCT identifier identifier
-                        {
-                            int where;
-                            // semantic check
-                            if(lookup(symtab, $2->ast_variable->sym_variable->name, scope,&where) == -1)
-                            {
-                                char error[50];
-                                char *struct_name = concat(2, " ", "STRUCT",$2->ast_variable->sym_variable->name);
-                                sprintf(error,"%s has not been defined", strdup(struct_name));
-                                yyerror(error);
-                                YYABORT; 
-                            }
-
-                            $3->ast_variable->sym_variable->type = $1;
-                            $3->ast_variable->sym_variable->s_info = new_struct_info($2->ast_variable->sym_variable->name, NULL);
-                        }
                      ;
 
 /* What is inside a function */
-body: statements                    { $$ = new_AST_Body(list_new(),$1); }
-    | declarations statements       { $$ = new_AST_Body($1,$2); }
+body: statements                                                                    { $$ = new_AST_Body(list_new(),$1); }
+    | {declaration_state=1;} declarations {declaration_state=-1;} statements        { $$ = new_AST_Body($2,$4); }
     ;
 
 /* List of statements */
@@ -396,8 +420,7 @@ func_call: identifier O_ROUND_BRACES call_args C_ROUND_BRACES
                 SymTab_Functions *f;
                 SymTab_Variables *a, *p;
 
-                // semantic check
-                // check if function has been defined
+                // SEMANTIC CHECK: check if function has been defined
                 if(lookup(symtab, $1->ast_variable->sym_variable->name, scope,&where) == -1)
                 {
                     char error[50];
@@ -407,51 +430,8 @@ func_call: identifier O_ROUND_BRACES call_args C_ROUND_BRACES
                     YYABORT; 
                 }
 
-                // check if arguments have been defined and update their type in AST
-                for(i=0; i<list_length($3);i++)
-                {
-                    node = list_get($3,i);
-                    pos = lookup(symtab, node->ast_variable->sym_variable->name, scope, &where);
-                    if(pos == -1)
-                    {
-                        // argument variable not declared before
-                        char error[60];
-                        sprintf(error,"Argument variable n.%d has not been declared", i+1);
-                        yyerror(error);
-                        YYABORT;  
-                    }
-                    else
-                    {
-                        update_node_type(node, symtab, where, pos);
-                        $3->items[i] = node;
-                    }
-                }       
-
-                // check if arguments and parameters have same number
-                pos = lookup(symtab, $1->ast_variable->sym_variable->name, scope,&where);
-                f = symtab->functions->items[pos];
-                List *par = f->parameters;
-                List *args = convert($3);
-                if(list_length(args)!=list_length(par))
-                {
-                    yyerror("Number of arguments and parameters doesn't match");
-                    YYABORT;  
-                } 
-
-                // check if arguments and parameters have same type
-                for(int i=0;i<list_length(par);i++)
-                {
-                    a = list_get(args,i);
-                    p = list_get(par,i);
-
-                    if(a->type != p->type)
-                    {
-                        char error[60];
-                        sprintf(error,"Type of n.%d argument and parameter doesn't match", i+1);
-                        yyerror(error);
-                        YYABORT;  
-                    } 
-                }
+                // SEMANTIC CHECK: check matching between arguments and parameters
+                check_args_params (symtab, scope, $1->ast_variable->sym_variable->name, $3);
 
                 $$ = new_AST_Call_Function ($1,$3);
             }
@@ -702,7 +682,7 @@ var_type: VOID
 - a dotted identifier for struct variables */
 identifier: IDENTIFIER
             {
-                $$ = new_AST_Variable($1, -1, T_NULL, NULL, 0, 0);
+                $$ = new_AST_Variable($1, -1, T_NULL, NULL, 0);
             }
           | identifier O_SQUARE_BRACES ICONST C_SQUARE_BRACES
             {
@@ -713,6 +693,42 @@ identifier: IDENTIFIER
             {
                 // We don't save identifiers' value, so we don't know the array dimension
                 $1->ast_variable->sym_variable->n = -2;
+
+                // SEMANTIC CHECK
+                // check that identifier that specify dimension has been declared
+                int where, pos = lookup(symtab, $3->ast_variable->sym_variable->name, scope, &where);
+                if(pos == -1)
+                {
+                    char error[60];
+                    sprintf(error, "Variable %s has not been declared",$3->ast_variable->sym_variable->name);
+                    yyerror(error);
+                    YYABORT;
+                }
+
+                // check that identifier that specify dimension is an int, is not an array and has been inizialized
+                SymTab_Variables *a = get_symtab_var(symtab, scope, pos, where);
+                if(a->type != T_INT)
+                {
+                    char error[60];
+                    sprintf(error, "Variable %s is not an integer variable",$3->ast_variable->sym_variable->name);
+                    yyerror(error);
+                    YYABORT;
+                }
+                if(a->n != -1)
+                {
+                    char error[60];
+                    sprintf(error, "Variable %s is an array. Must be a simple variable",$3->ast_variable->sym_variable->name);
+                    yyerror(error);
+                    YYABORT;
+                }
+                if(a->inizialized==0)
+                {
+                    char error[60];
+                    sprintf(error, "Variable %s has not been inizialized",$3->ast_variable->sym_variable->name);
+                    yyerror(error);
+                    YYABORT;
+                }
+
                 $$ = $1;
             }
           | identifier DOT identifier
@@ -735,7 +751,7 @@ identifier: IDENTIFIER
                 }
                 // concat identifiers and use it as name for AST *var_struct
                 c1 = concat(3, "", c1,$2,c2);
-                $$ = new_AST_Variable (c1, $1->ast_variable->sym_variable->n, T_STRUCT, NULL, 0, 0);
+                $$ = new_AST_Variable (c1, $1->ast_variable->sym_variable->n, T_STRUCT, NULL, 0);
             }
           ;
 
@@ -780,8 +796,7 @@ number: ICONST
 void yyerror (const char *s)
 {
     extern int yylineno;
-	extern char* yytext;
-	fprintf(stderr, "Error: %s\nLine: %d\nSymbol: %s\n", s, yylineno, yytext);
+	fprintf(stderr, "Error: %s\nLine: %d\n", s, yylineno);
 }
 
 int main (void)

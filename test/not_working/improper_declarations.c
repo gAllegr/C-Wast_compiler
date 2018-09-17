@@ -12,9 +12,9 @@ int main(void)
 
     if ( cond > 5)
     {
-	if ( c >= 2 ) char d = "d";
+	if ( c >= 2 ) char d = 'd';
     } else {
-	char b = "b";
+	char b = 'b';
     }
     return 0;	
 }

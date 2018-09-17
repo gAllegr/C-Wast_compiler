@@ -6,7 +6,7 @@ int main(void)
     char a;
 
     if ( cond > 5)
-		a = "a";
+		a = 'a';
     else {
         printf ( "Variable has a value lesser then or equal to 5\n" );
     }

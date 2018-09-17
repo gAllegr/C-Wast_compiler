@@ -4,14 +4,13 @@
 #include <ctype.h>
 #include "symtab.h"
 
-SymTab_Variables *new_SymTab_Variables (char *name, int n, ValType type, struct_info *s_info, int declared, int inizialized)
+SymTab_Variables *new_SymTab_Variables (char *name, int n, ValType type, struct_info *s_info, int inizialized)
 {
     SymTab_Variables *sym_variable = malloc(sizeof(SymTab_Variables));
     sym_variable->name = name;
     sym_variable->n = n;
     sym_variable->type = type;
     sym_variable->s_info = s_info;
-    sym_variable->declared = declared;
     sym_variable->inizialized = inizialized;
 
     return sym_variable;
@@ -44,6 +43,34 @@ SymTab *init_symtab()
 
     return sym_tab;
 }
+
+SymTab_Variables *get_symtab_var(SymTab *symtab, char *scope, int pos, int where)
+{
+    int f_pos;
+    SymTab_Variables *a;
+	SymTab_Functions *f;	
+
+    // retrieve variable type from Symbol Table
+    switch(where)
+    {
+        case 0:     // variable is global
+            a = list_get(symtab->global_variables,pos);
+            break;
+        case 1:     // variable is a parameter
+            f_pos = lookup(symtab, scope, "GLOBAL",&where);
+            f = list_get(symtab->functions,f_pos);
+            a = list_get(f->parameters,pos);
+            break;
+        case 2:     // variable is local
+            f_pos = lookup(symtab, scope, "GLOBAL",&where);
+            f = list_get(symtab->functions,f_pos);
+            a = list_get(f->local_variables,pos);
+            break;
+    }
+
+    return a;
+}
+
 
 void insert_var(SymTab *symtab, SymTab_Variables *sym_var, char *scope)
 {
@@ -332,6 +359,34 @@ int lookup(SymTab *symtab, char *name, char *scope, int *where)
     }
 
     return pos;
+}
+
+/* Check if a variable with same name has already been declared */
+void check_redeclaration(SymTab *symtab, char *name, char *scope)
+{
+    extern void yyerror(const char *s);
+
+    int where, pos = lookup(symtab, name, scope, &where);
+    char error[100];
+                                
+    if(pos != -1)                                   // variable found
+    {
+        if(strcmp(scope,"GLOBAL")==0)               // scope = GLOBAL
+        {
+            sprintf(error,"Redeclaration of variable %s", name);
+            yyerror(error);
+            exit(1);
+        }
+        else                                        // scope = FUNCTION
+        {
+            if(where != 0)                          // variable found is not global
+            {
+                sprintf(error,"Redeclaration of variable %s", name);
+                yyerror(error);
+                exit(1);
+            }
+        }
+    }
 }
 
 /* Remove a specific SymTab_Variable from Symbol Table */

@@ -95,12 +95,12 @@ C is a procedural language, so the main structure of a program is composed only 
 *An example of not allowed declaration can be found at* `test/not_working/struct.c` 
 
 ### Function declarations
-* Functions can return only *void* or *struct* or basic types
+* Functions can return only *void* or basic types
 * Support void parameters<br>
 Examples: `int main ()` or `void main (void)`
 * A single or more parameters can be passed by values 
 * During function definition, parameters can be specified by *type identifier*
-* Support struct parameters
+* Do not support struct parameters
 * Do not support parameters passed by reference
 * This compilers does not consider the possibility to define a function prototype. So something like `int sum (int, int);` is not to be considered as an optional way to define functions
 
@@ -307,7 +307,29 @@ _With what could be replaced_<br>
 This will limit the issue, but will not fully solve it. Declaration of two different struct with same variable name will generate anyway the segmentation fault.
 
 ## Semantic checks
-**Next step!**
+### Declarations
+* variables cannot have void type
+* array variable dimension must be constant
+* struct elements cannot be inizialized
+* check on variable redeclaration
+* check on inizialization of variables (variables can be inizialized only with constants) **(struct is missing)**
+### Function definition - Parameters
+* parameters cannot have void type
+### Function call
+* check if a function has been defined
+* check if arguments are in the same number of parameters
+* check if arguments and parameters have same type
+
+
+
+
+
+
+
+### Variable used as array index
+* check if has been previously declared and inizialized
+* check if it's an integer variable
+* check that it's a simple variable
 
 ## Code generator
 **Last one!**

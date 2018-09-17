@@ -29,10 +29,10 @@ AST *new_AST_Const(ValType type, char *value)
     return ast;
 }
 
-AST *new_AST_Variable (char *name, int n, ValType type, struct_info *s_info, int declared, int inizialized)
+AST *new_AST_Variable (char *name, int n, ValType type, struct_info *s_info, int inizialized)
 {
     AST_Variable *ast_variable = malloc(sizeof(AST_Variable));
-    ast_variable->sym_variable = new_SymTab_Variables(name,n,type,s_info,declared,inizialized);
+    ast_variable->sym_variable = new_SymTab_Variables(name,n,type,s_info,inizialized);
     
 
     AST *ast = malloc(sizeof(AST));
@@ -478,7 +478,7 @@ void print_ast(AST *ast, int indent)
                 for(int i=0; i<list_length(elements);i++)
                 {
                     SymTab_Variables *s = list_get(elements,i);
-                    print_ast(new_AST_Variable(s->name,s->n,s->type,s->s_info,s->declared,s->inizialized),indent+4);
+                    print_ast(new_AST_Variable(s->name,s->n,s->type,s->s_info,s->inizialized),indent+4);
                 }
             }
             break;
@@ -571,7 +571,7 @@ void print_ast(AST *ast, int indent)
         case N_DEF_FUNCTION:
             printf("%s NAME\n", ast_type_name(ast));
             SymTab_Variables *f_name = ast->ast_def_function->sym_function->func_name;
-            print_ast(new_AST_Variable(f_name->name,f_name->n,f_name->type,f_name->s_info,f_name->declared,f_name->inizialized),indent+4);
+            print_ast(new_AST_Variable(f_name->name,f_name->n,f_name->type,f_name->s_info,f_name->inizialized),indent+4);
 
             for (int i=0; i<indent; i++) { printf(" "); }
             printf("%s PARAMETERS\n", ast_type_name(ast));
@@ -579,7 +579,7 @@ void print_ast(AST *ast, int indent)
             for(int i=0; i<list_length(f_param);i++)
             {
                 SymTab_Variables *p = list_get(f_param,i);
-                print_ast(new_AST_Variable(p->name,p->n,p->type,p->s_info,p->declared,p->inizialized),indent+4);
+                print_ast(new_AST_Variable(p->name,p->n,p->type,p->s_info,p->inizialized),indent+4);
             }
 
             for (int i=0; i<indent; i++) { printf(" "); }
