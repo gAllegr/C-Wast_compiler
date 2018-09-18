@@ -126,7 +126,7 @@ declaration: var_type var_decl SEMICOLON
                             case N_ASSIGNMENT:
                                 // SEMANTIC CHECK: variable redeclaration
                                 check_redeclaration(symtab, obj->ast_assign->variable->ast_variable->sym_variable->name, scope);
-
+                                
                                 obj->ast_assign->variable->ast_variable->sym_variable->type = $1;
                                 // Insert declared variables in Symbol Table
                                 insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
@@ -155,10 +155,15 @@ declaration: var_type var_decl SEMICOLON
                         AST *obj = list_get($1,i);
                         switch(obj->type) {
                             case N_VARIABLE:
+                                // SEMANTIC CHECK: variable redeclaration
+                            //    check_redeclaration(symtab, obj->ast_variable->sym_variable->name, scope);
+
                                 // Insert declared variables in Symbol Table
                                 insert_var(symtab, obj->ast_variable->sym_variable, scope);
                                 break;
-                            case N_ASSIGNMENT:
+                            case N_ASSIGNMENT:                            
+                                // SEMANTIC CHECK: variable redeclaration
+                            //    check_redeclaration(symtab, obj->ast_assign->variable->ast_variable->sym_variable->name, scope);
                                 // Insert declared variables in Symbol Table
                                 insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
                                 break;
@@ -313,6 +318,18 @@ func_definition: var_type identifier
                  {
                     $2->ast_variable->sym_variable->type = $1;
                     $<node>$ = new_AST_Def_Function($2);
+
+                    // SEMANTIC CHECK: function name is not already being used by a variable
+                    int where, pos = lookup(symtab, $2->ast_variable->sym_variable->name, scope, &where);
+                    if(pos != -1)
+                    {
+                        char error[70];
+                        char *function_name = concat(2, " ", "Function name",$2->ast_variable->sym_variable->name);
+                        sprintf(error,"%s can't be used, because it's already used somewhere else", strdup(function_name));
+                        yyerror(error);
+                        YYABORT; 
+                    }
+
                     // Insert declared function in Symbol Table
                     insert_fun(symtab, $<node>$->ast_def_function->sym_function);
                     // Update scope
@@ -420,14 +437,25 @@ func_call: identifier O_ROUND_BRACES call_args C_ROUND_BRACES
                 SymTab_Functions *f;
                 SymTab_Variables *a, *p;
 
-                // SEMANTIC CHECK: check if function has been defined
-                if(lookup(symtab, $1->ast_variable->sym_variable->name, scope,&where) == -1)
+                // SEMANTIC CHECK: check if function has been defined and if it's really a function
+                if(lookup(symtab, $1->ast_variable->sym_variable->name, scope ,&where) == -1)
                 {
                     char error[50];
                     char *function_name = concat(2, " ", "FUNCTION",$1->ast_variable->sym_variable->name);
                     sprintf(error,"%s has not been defined", strdup(function_name));
                     yyerror(error);
                     YYABORT; 
+                }
+                else
+                {
+                    if(where != 3)
+                    {
+                        char error[50];
+                        char *function_name = concat(2, " ", "FUNCTION",$1->ast_variable->sym_variable->name);
+                        sprintf(error,"%s has not been defined as function", strdup(function_name));
+                        yyerror(error);
+                        YYABORT; 
+                    }
                 }
 
                 // SEMANTIC CHECK: check matching between arguments and parameters
@@ -542,9 +570,9 @@ increment: identifier INCR
          ;
 
 /* Printf function, allows to print out more than one variable */
-printf_stat: PRINTF O_ROUND_BRACES word C_ROUND_BRACES
+printf_stat: PRINTF O_ROUND_BRACES STRCONST C_ROUND_BRACES
                 {
-                    $$ = new_AST_Builtin_Stat($1, $3, list_new());
+                    $$ = new_AST_Builtin_Stat($1, new_AST_Const(T_CHAR,$3), list_new());
                 }
             | PRINTF O_ROUND_BRACES STRCONST COMMA printed_var C_ROUND_BRACES
                 {
@@ -703,6 +731,17 @@ identifier: IDENTIFIER
                     sprintf(error, "Variable %s has not been declared",$3->ast_variable->sym_variable->name);
                     yyerror(error);
                     YYABORT;
+                }
+                else
+                {
+                    if(where == 3)
+                    {
+                        // lookup discover argument has same name of a function
+                        char error[80];
+                        sprintf(error,"Variable %s has not been declared as variable, but it's a function", $3->ast_variable->sym_variable->name);
+                        yyerror(error);
+                        exit(1);  
+                    }
                 }
 
                 // check that identifier that specify dimension is an int, is not an array and has been inizialized

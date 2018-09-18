@@ -303,7 +303,6 @@ int lookup(SymTab *symtab, char *name, char *scope, int *where)
                 break;
             }
         }
-
         SymTab_Functions *f;
         for(i=0; i<list_length(symtab->functions);i++)
         {   
@@ -311,6 +310,7 @@ int lookup(SymTab *symtab, char *name, char *scope, int *where)
             if(strcmp(name,f->func_name->name)==0)
             {
                 pos = i;
+                *where = 3;
                 break;
             }
         }
@@ -379,7 +379,7 @@ void check_redeclaration(SymTab *symtab, char *name, char *scope)
         }
         else                                        // scope = FUNCTION
         {
-            if(where != 0)                          // variable found is not global
+            if(where == 1 || where == 2)            // variable found is not global
             {
                 sprintf(error,"Redeclaration of variable %s", name);
                 yyerror(error);

@@ -150,6 +150,17 @@ ValType evaluate_expression_type(AST *ast, SymTab *symtab, char *scope)
 				yyerror(error);
 				exit(1); 
 			}
+			else
+			{
+				if(where == 3)
+				{
+					// lookup discover argument has same name of a function
+					char error[80];
+					sprintf(error,"Variable %s has not been declared as variable, but it's a function", ast->ast_variable->sym_variable->name);
+					yyerror(error);
+					exit(1);  
+				}				
+			}
 
 			// check if variable has been inizialized
 			var = get_symtab_var(symtab, scope, pos, where);
@@ -428,13 +439,31 @@ void check_args_params (SymTab *symtab, char *scope, char *function_name, List *
 		}
 		else
 		{
+			if(where == 3)					
+			{
+				// lookup discover argument has same name of a function
+				char error[90];
+				sprintf(error,"Argument variable n.%d has not been declared as variable, but it's a function", i+1);
+				yyerror(error);
+				exit(1);  
+			} 
+
 			update_node_type(node, symtab, where, pos);
 			args->items[i] = node;
 		}
 	}       
 
 	// check if arguments and parameters have same number
-	pos = lookup(symtab, function_name, scope,&where);
+	pos = lookup(symtab, function_name, scope, &where);
+	if(where != 3)
+	{
+		// lookup didn't find function as a function
+		char error[90];
+		sprintf(error,"Can't find function %s among functions", function_name);
+		yyerror(error);
+		exit(1);  
+	}
+
 	f = symtab->functions->items[pos];
 	List *par = f->parameters;
 	List *arg = convert(args);
