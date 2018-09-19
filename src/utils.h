@@ -20,14 +20,17 @@ void update_node_type(AST *node, SymTab *symtab, int where, int pos);
 /* ===== Update inizialization flag of a variable in Symbol Table ===== */
 void update_inizialization(SymTab *symtab, char *name, char *scope);
 
+/* ===== Update inizialization flag of a struct element variable in Symbol Table ===== */
+void update_struct_element_init(SymTab *symtab, char *name, char *scope, int pos_elem);
+
 /* ===== Evaluate type of expression rule ===== */
 ValType evaluate_expression_type(AST *ast, SymTab *symtab, char *scope);
 
 /* ===== Check type of inizialization list elements ===== */
-ValType check_array_init_list(SymTab *symtab, char *scope, char *var_assign_name, List *list);
+ValType check_array_init_list(char *var_assign_name, List *list);
 
 /* ===== Semantic check on variable assignment ===== */
-void check_decl_assignment(AST *ast, SymTab *symtab, char *scope);
+int check_decl_assignment(SymTab_Variables *var_assign, AST *expression, SymTab *symtab, char *scope);
 
 /* ===== Check matching between arguments and parameters ===== */
 void check_args_params(SymTab *symtab, char *scope, char *function_name, List *args);

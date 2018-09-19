@@ -29,7 +29,7 @@ void list_append(List *list, void *item) {
 void list_remove(List *list, int index)
 {
     for(int i=index;i<list_length(list)-1;i++)
-        list->items[i] = list->items[i++];
+        list->items[i] = list->items[i+1];
 
     list->size--;
     list->items = realloc(list->items, list->size * sizeof(list->items[0]));

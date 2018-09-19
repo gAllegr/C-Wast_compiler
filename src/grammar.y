@@ -141,7 +141,24 @@ declaration: var_type var_decl SEMICOLON
                         obj = list_get($2,i);
                         if(obj->type == N_ASSIGNMENT)
                         {
-                            check_decl_assignment(obj, symtab, scope);
+                            // retrieve var_assign from symbol table
+                            int where, pos = lookup(symtab, obj->ast_assign->variable->ast_variable->sym_variable->name, scope, &where);
+                            SymTab_Variables *var_assign = get_symtab_var(symtab, scope, pos, where);
+                            AST *expression = obj->ast_assign->expression;
+
+                            int init = check_decl_assignment(var_assign, expression, symtab, scope);
+                            if(init == 1)                   // types are the same
+                            {
+                                // update Symbol Table
+	                            update_inizialization(symtab, var_assign->name, scope);
+                            }
+                            else                            // type mismatch
+                            {
+                                char error[80];
+                                sprintf(error,"Mismatch type between inizialized variable %s and expression", var_assign->name);
+                                yyerror(error);
+                                exit(1); 
+                            }
                         }
                     }
                     
@@ -150,23 +167,53 @@ declaration: var_type var_decl SEMICOLON
                 }
             | struct_declaration SEMICOLON
                 {
-                    for(int i=0; i<list_length($1);i++)
+                    int i;
+                    AST *obj;
+
+                    for(i=0; i<list_length($1);i++)
                     {
-                        AST *obj = list_get($1,i);
+                        obj = list_get($1,i);
                         switch(obj->type) {
                             case N_VARIABLE:
                                 // SEMANTIC CHECK: variable redeclaration
-                            //    check_redeclaration(symtab, obj->ast_variable->sym_variable->name, scope);
+                                check_redeclaration(symtab, obj->ast_variable->sym_variable->name, scope);
 
                                 // Insert declared variables in Symbol Table
                                 insert_var(symtab, obj->ast_variable->sym_variable, scope);
                                 break;
                             case N_ASSIGNMENT:                            
                                 // SEMANTIC CHECK: variable redeclaration
-                            //    check_redeclaration(symtab, obj->ast_assign->variable->ast_variable->sym_variable->name, scope);
+                                check_redeclaration(symtab, obj->ast_assign->variable->ast_variable->sym_variable->name, scope);
                                 // Insert declared variables in Symbol Table
                                 insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
                                 break;
+                        }
+                    }
+
+                    // SEMANTIC CHECK: variable content, if it's inizialized
+                    for(i=0; i<list_length($1);i++)
+                    {
+                        obj = list_get($1,i);
+                        if(obj->type == N_ASSIGNMENT)
+                        {
+                            // retrieve var_assign from symbol table
+                            int where, pos = lookup(symtab, obj->ast_assign->variable->ast_variable->sym_variable->name, scope, &where);
+                            SymTab_Variables *var_assign = get_symtab_var(symtab, scope, pos, where);
+                            AST *expression = obj->ast_assign->expression;
+
+                            int init = check_decl_assignment(var_assign, expression, symtab, scope);
+                            if(init == 1)                   // types are the same
+                            {
+                                // update Symbol Table
+	                            update_inizialization(symtab, var_assign->name, scope);
+                            }
+                            else                            // type mismatch
+                            {
+                                char error[80];
+                                sprintf(error,"Mismatch type between inizialized variable %s and expression", var_assign->name);
+                                yyerror(error);
+                                exit(1); 
+                            }
                         }
                     }
 
@@ -262,7 +309,7 @@ struct_declaration: STRUCT identifier O_CURLY_BRACES declarations C_CURLY_BRACES
                                     int n = a->ast_assign->variable->ast_variable->sym_variable->n;
                                     List *e = prepare_struct_elements(n, elements);
 
-                                    a->ast_assign->variable->ast_variable->sym_variable->s_info = new_struct_info($2->ast_variable->sym_variable->name, e);
+                                    a->ast_assign->variable->ast_variable->sym_variable->s_info = new_struct_info($2->ast_variable->sym_variable->name, e);                                 
                                     a->ast_assign->variable->ast_variable->sym_variable->type = $1;
                                 }
                             }
