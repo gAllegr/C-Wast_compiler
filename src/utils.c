@@ -127,7 +127,8 @@ void update_inizialization(SymTab *symtab, char *name, char *scope)
 }
 
 /* ===== Update inizialization flag of a struct element variable in Symbol Table ===== */
-void update_struct_element_init(SymTab *symtab, char *scope, char *var_name, int pos_elem)
+// array_list is the index of which list of element must be consider (case of array variable of type struct)
+void update_struct_element_init(SymTab *symtab, char *scope, char *var_name, int array_list, int pos_elem)
 {
 	int pos, where;
 
@@ -144,28 +145,22 @@ void update_struct_element_init(SymTab *symtab, char *scope, char *var_name, int
 	{
 		case 0:     // variable is global
 			a = list_get(symtab->global_variables,pos);
-			elements = a->s_info->struct_element->items[0];
+			elements = a->s_info->struct_element->items[array_list];
 			struct_element = elements->items[pos_elem];
 			struct_element->inizialized = 1;
 			elements->items[pos_elem] = struct_element;
-			a->s_info->struct_element->items[0] = elements;
+			a->s_info->struct_element->items[array_list] = elements;
 			symtab->global_variables->items[pos] = a;
-printf("inizialized? %d\n", struct_element->inizialized);
-			break;
-		case 1:     // variable is a parameter
-			f_pos = lookup(symtab, scope, "GLOBAL",&where);
-			f = list_get(symtab->functions,f_pos);
-			a = list_get(f->parameters,pos);
-			a->inizialized = 1;
-			f->parameters->items[pos] = a;
-			symtab->functions->items[f_pos] = f;
-		
 			break;
 		case 2:     // variable is local
 			f_pos = lookup(symtab, scope, "GLOBAL",&where);
 			f = list_get(symtab->functions,f_pos);
 			a = list_get(f->local_variables,pos);
-			a->inizialized = 1;
+			elements = a->s_info->struct_element->items[array_list];
+			struct_element = elements->items[pos_elem];
+			struct_element->inizialized = 1;
+			elements->items[pos_elem] = struct_element;
+			a->s_info->struct_element->items[array_list] = elements;			
 			f->local_variables->items[pos] = a;
 			symtab->functions->items[f_pos] = f;
 			break;
@@ -221,6 +216,8 @@ ValType evaluate_expression_type(AST *ast, SymTab *symtab, char *scope)
 				yyerror(error);
 				exit(1); 
 			}
+			// update variable type in AST
+			ast->ast_variable->sym_variable->type = var->type;
 
 			return var->type;
 			break;
@@ -305,7 +302,7 @@ int check_decl_assignment(SymTab_Variables *var_assign, AST *expression, SymTab 
 	int where, pos, i;
     SymTab_Variables *a;
 
-	char error[100];
+	char error[120];
 
 	if(var_assign->type != T_STRUCT)
 	{
@@ -455,15 +452,12 @@ int check_decl_assignment(SymTab_Variables *var_assign, AST *expression, SymTab 
 				break;
 			case N_LIST:
 				;
-				List *struct_elements = var_assign->s_info->struct_element->items[0];
-				AST *ast_assign, *ast_variable;
+				List *struct_elements;
 
 				// variable is simple variable
 				if(var_assign->n == -1)
 				{			
-printf("struct var name: %s\n", var_assign->name);		
-printf("n. struct element: %d\n", list_length(struct_elements));
-printf("n. init element: %d\n", list_length(expression->ast_list->list));
+					struct_elements = var_assign->s_info->struct_element->items[0];
 					if(list_length(struct_elements) != list_length(expression->ast_list->list))
 					{
 						sprintf(error,"Number of struct elements of variable %s and number of elements of inizialization list are different", var_assign->name);
@@ -478,18 +472,15 @@ printf("n. init element: %d\n", list_length(expression->ast_list->list));
 						// retrieve elements of interest
 						assignment_variable = list_get(struct_elements,i);
 						assignment_value = list_get(expression->ast_list->list,i);
-printf("element: %s\n", assignment_variable->name);
-printf("init: %d\n", assignment_value->ast_constant->ival);
 						// check assignment
 						init = check_decl_assignment(assignment_variable, assignment_value, symtab, scope);
 						if(init == 1)                   // types are the same
                             {
                                 // update Symbol Table
-	                            update_struct_element_init(symtab, scope, var_assign->name, i);
+	                            update_struct_element_init(symtab, scope, var_assign->name, 0, i);
                             }
                             else                            // type mismatch
                             {
-                                char error[80];
                                 sprintf(error,"Mismatch type between inizialized variable %s and expression", var_assign->name);
                                 yyerror(error);
                                 exit(1); 
@@ -499,6 +490,55 @@ printf("init: %d\n", assignment_value->ast_constant->ival);
 				else
 				{
 					// variable is an array and dimension is known
+					// check if inizialization elements have been provided for all array element of struct variable
+					List *list_struct_elements = var_assign->s_info->struct_element;
+					if(list_length(list_struct_elements) != list_length(expression->ast_list->list))
+					{
+						sprintf(error,"Struct variable %s is an array. To inizializate it, please provide all array element inizialization", var_assign->name);
+						yyerror(error);
+						exit(1);
+					}
+					
+					// extract the single struct array element and inizialization list
+					AST *ast_init_elements;
+					List *init_elements;
+
+					for(int j=0; j<list_length(list_struct_elements);j++)
+					{
+						// get lists to be compared
+						struct_elements = list_get(list_struct_elements,j);
+						ast_init_elements = list_get(expression->ast_list->list,j);			// AST_List that contains the list of elements
+						init_elements = ast_init_elements->ast_list->list;
+
+						if(list_length(struct_elements) != list_length(init_elements))
+						{
+							sprintf(error,"Number of struct elements of variable %s[%d] and number of elements of inizialization list are different", var_assign->name, j);
+							yyerror(error);
+							exit(1);
+						}
+
+						int init;
+						
+						for(i=0; i<list_length(struct_elements);i++)
+						{
+							// retrieve elements of interest
+							assignment_variable = list_get(struct_elements,i);
+							assignment_value = list_get(init_elements,i);
+							// check assignment
+							init = check_decl_assignment(assignment_variable, assignment_value, symtab, scope);
+							if(init == 1)                   // types are the same
+								{
+									// update Symbol Table
+									update_struct_element_init(symtab, scope, var_assign->name, j, i);
+								}
+								else                            // type mismatch
+								{
+									sprintf(error,"Mismatch type between inizialized variable %s and expression", var_assign->name);
+									yyerror(error);
+									exit(1); 
+								}
+						}
+					}
 				}
 
 				assign_value_type = T_STRUCT;
@@ -592,5 +632,354 @@ void check_args_params (SymTab *symtab, char *scope, char *function_name, List *
 	}
 }
 
+/* ===== Semantic check on Assignment Node ===== */
+int check_assignment(AST *ast_assignment, SymTab *symtab, char *scope)
+{
+	extern void yyerror(const char *s);
+	
+	AST *variable = ast_assignment->ast_assign->variable;
+	AST *expression = ast_assignment->ast_assign->expression;
+	SymTab_Variables *var_assign = variable->ast_variable->sym_variable;
+
+	SymTab_Variables *assignment_variable;				// struct element to which assign value
+	AST *assignment_value;								// value to assign to struct element (assignment_variable)
+
+	ValType assign_value_type;							// value type of expression branch
+
+	int where, pos, i;
+    SymTab_Variables *a;
+
+	char error[120];
+
+	// check if variable on the left of assignment has been declared
+	if(var_assign->type == T_STRUCT)
+	{
+		char str[15];
+		strcpy(str, var_assign->name);
+		char *name = strtok(str, ".");
+		pos = lookup(symtab, name, scope, &where);
+	}
+	else pos = lookup(symtab, var_assign->name, scope, &where);
+
+	if(pos == -1)
+	{
+		sprintf(error,"Assignment variable %s not declared",var_assign->name);
+		yyerror(error);
+		exit(1); 
+	}
+	// retrieve variable from symbol table and update variable type in AST
+	a = get_symtab_var(symtab, scope, pos, where);
+	variable->ast_variable->sym_variable->type = a->type;
+	ast_assignment->ast_assign->variable = variable;
+
+
+	// check assignment
+	if(var_assign->type != T_STRUCT)
+	{
+		// NOT STRUCT VARIABLE
+		// variable is simple variable
+		if(var_assign->n == -1)
+		{
+			switch(expression->type)
+			{
+				case N_CONSTANT:
+					if(expression->ast_constant->type == T_CHAR && expression->ast_constant->sval[0]!='\'')
+					{
+						sprintf(error,"Cannot assign a string to variable %s", var_assign->name);
+						yyerror(error);
+						exit(1); 
+					}
+
+					assign_value_type = expression->ast_constant->type;
+					break;
+				case N_VARIABLE:
+					// check if variable has been valorized
+					pos = lookup(symtab, expression->ast_variable->sym_variable->name, scope, &where);
+					if(pos == -1)
+					{
+						sprintf(error,"Inizialization variable %s not declared",expression->ast_variable->sym_variable->name);
+						yyerror(error);
+						exit(1); 
+					}
+					
+					// retrieve variable from symbol table
+					assignment_variable = get_symtab_var(symtab, scope, pos, where);
+					// check if variable has been valorized
+					if(assignment_variable->inizialized == 0)
+					{
+						sprintf(error,"Inizialization variable %s has not been inizialized",expression->ast_variable->sym_variable->name);
+						yyerror(error);
+						exit(1); 
+					}
+					
+					// update variable type in AST
+					expression->ast_variable->sym_variable->type = assignment_variable->type;
+					ast_assignment->ast_assign->expression = expression;
+
+					// other checks depending on kind of variable
+					// simple variable -> no other checks
+					/* array variable with unknown index value -> index variable has been declared
+																  index variable has been inizializated
+						There 2 checks are done within grammar, inside "identifier" rule */
+					// array variable with integer index specified -> check index is lower than array dimension
+					if(expression->ast_variable->sym_variable->n > 0 && expression->ast_variable->sym_variable->n >= assignment_variable->n)
+					{
+						yyerror("Array index out of range");
+						exit(1); 
+					}
+
+					assign_value_type = assignment_variable->type;
+					break;
+				case N_BINARY_EXPR:
+				case N_UNARY_EXPR:
+					assign_value_type = evaluate_expression_type(expression, symtab, scope);
+					break;
+				case N_LIST:
+					sprintf(error,"Cannot assign a list of values! Variable %s is not an array", var_assign->name);
+					yyerror(error);
+					exit(1); 
+					break;
+				case N_CALL_FUNCTION:
+					assignment_variable = expression->ast_call_function->func_name->ast_variable->sym_variable;
+					// check of function definition is done inside func_call rule
+					
+					// retrieve variable from symbol table and update variable type in AST
+					a = get_symtab_var(symtab, scope, pos, where);
+					assignment_variable->type = a->type;
+					expression->ast_call_function->func_name->ast_variable->sym_variable = assignment_variable;
+
+					assign_value_type = assignment_variable->type;
+					break;
+			}
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		// variable is an array and dimension is known
+		if(var_assign->n > -1)
+		{
+			switch(expression->type)
+			{
+				case N_CONSTANT:
+					if(expression->ast_constant->type == T_CHAR)
+					{
+						// this is the case of an array of char inizialized using a char/string
+						// checked that array dimension is greater than char/string constant length
+						// the -2 is necessary because char are saved with initial and final "
+						if(var_assign->n > strlen(expression->ast_constant->sval)-2)
+						{
+							// check if it's a char constant (not a string literal)
+							if(expression->ast_constant->sval[0]=='\'')
+							{
+								sprintf(error,"Cannot assign a constant value! Variable %s is an array", var_assign->name);
+								yyerror(error);
+								exit(1); 
+							}
+
+							assign_value_type = T_CHAR;
+						} 
+						else
+						{
+							sprintf(error,"Array variable %s is too small to save string %s", var_assign->name, expression->ast_constant->sval);
+							yyerror(error);
+							exit(1); 
+						}						
+					}
+					else
+					{
+						sprintf(error,"Cannot assign a constant value! Variable %s is an array", var_assign->name);
+						yyerror(error);
+						exit(1); 
+					}
+					break;
+				case N_VARIABLE:
+					sprintf(error,"Cannot assign a variable to array %s[%d]. Value must be constant", var_assign->name, var_assign->n);
+					yyerror(error);
+					exit(1); 
+					break;
+				case N_BINARY_EXPR:
+				case N_UNARY_EXPR:
+					sprintf(error, "Cannot inizialize array %s[%d] with an expression", var_assign->name, var_assign->n);
+					yyerror(error);
+					exit(1);
+					break;
+				case N_LIST:
+					// check array and inizialization list dimension 
+					// check if it's an array of char and array size and inizialization list size are equal
+					if(var_assign->type==T_CHAR && list_length(expression->ast_list->list) == var_assign->n)
+					{
+						sprintf(error,"Char array dimension of %s is equal to number of elements of inizialization list", var_assign->name);
+						yyerror(error);
+						exit(1);
+					}
+
+					// check if it's an array of char and array size is smaller than inizialization list length
+					if(var_assign->type==T_CHAR && var_assign->n < list_length(expression->ast_list->list))
+					{
+						sprintf(error,"Array dimension of %s is smaller than number of elements of inizialization list", var_assign->name);
+						yyerror(error);
+						exit(1);
+					}
+
+					// check if it's not a char array and list length is not equal to array dimension
+					if(var_assign->type != T_CHAR && list_length(expression->ast_list->list) != var_assign->n)
+					{
+						sprintf(error,"Array dimension of %s and number of elements of inizialization list are different", var_assign->name);
+						yyerror(error);
+						exit(1);
+					} 
+
+					// check inizialization elements type
+					assign_value_type = check_array_init_list(var_assign->name, expression->ast_list->list);
+					break;
+				case N_CALL_FUNCTION:
+					sprintf(error, "Cannot inizialize array %s[%d] with a function", var_assign->name, var_assign->n);
+					yyerror(error);
+					exit(1);
+					break;
+			}
+		}
+	}
+	else
+	{
+		// STRUCT VARIABLE
+		switch(expression->type)
+		{
+			case N_CONSTANT:
+				sprintf(error, "Cannot inizialize struct variable %s with a constant", var_assign->name);
+				yyerror(error);
+				exit(1);
+				break;
+			case N_VARIABLE:
+				sprintf(error, "Cannot assign a variable to struct variable %s. Value must be constant", var_assign->name);
+				yyerror(error);
+				exit(1);
+				break;
+			case N_BINARY_EXPR:
+			case N_UNARY_EXPR:
+				sprintf(error, "Cannot inizialize struct variable %s with an expression", var_assign->name);
+				yyerror(error);
+				exit(1);
+				break;
+			case N_LIST:
+				;
+				List *struct_elements;
+
+				// variable is simple variable
+				if(var_assign->n == -1)
+				{			
+					struct_elements = var_assign->s_info->struct_element->items[0];
+					if(list_length(struct_elements) != list_length(expression->ast_list->list))
+					{
+						sprintf(error,"Number of struct elements of variable %s and number of elements of inizialization list are different", var_assign->name);
+						yyerror(error);
+						exit(1);
+					}
+
+					int init;
+					
+					for(i=0; i<list_length(struct_elements);i++)
+					{
+						// retrieve elements of interest
+						assignment_variable = list_get(struct_elements,i);
+						assignment_value = list_get(expression->ast_list->list,i);
+						// check assignment
+						init = check_decl_assignment(assignment_variable, assignment_value, symtab, scope);
+						if(init == 1)                   // types are the same
+						{
+							// update Symbol Table
+							update_struct_element_init(symtab, scope, var_assign->name, 0, i);
+						}
+						else                            // type mismatch
+						{
+							sprintf(error,"Mismatch type between inizialized variable %s and expression", var_assign->name);
+							yyerror(error);
+							exit(1); 
+						}
+					}
+				}
+				else
+				{
+					// variable is an array and dimension is known
+					// check if inizialization elements have been provided for all array element of struct variable
+					List *list_struct_elements = var_assign->s_info->struct_element;
+					if(list_length(list_struct_elements) != list_length(expression->ast_list->list))
+					{
+						sprintf(error,"Struct variable %s is an array. To inizializate it, please provide all array element inizialization", var_assign->name);
+						yyerror(error);
+						exit(1);
+					}
+					
+					// extract the single struct array element and inizialization list
+					AST *ast_init_elements;
+					List *init_elements;
+
+					for(int j=0; j<list_length(list_struct_elements);j++)
+					{
+						// get lists to be compared
+						struct_elements = list_get(list_struct_elements,j);
+						ast_init_elements = list_get(expression->ast_list->list,j);			// AST_List that contains the list of elements
+						init_elements = ast_init_elements->ast_list->list;
+
+						if(list_length(struct_elements) != list_length(init_elements))
+						{
+							sprintf(error,"Number of struct elements of variable %s[%d] and number of elements of inizialization list are different", var_assign->name, j);
+							yyerror(error);
+							exit(1);
+						}
+
+						int init;
+						
+						for(i=0; i<list_length(struct_elements);i++)
+						{
+							// retrieve elements of interest
+							assignment_variable = list_get(struct_elements,i);
+							assignment_value = list_get(init_elements,i);
+							// check assignment
+							init = check_decl_assignment(assignment_variable, assignment_value, symtab, scope);
+							if(init == 1)                   // types are the same
+								{
+									// update Symbol Table
+									update_struct_element_init(symtab, scope, var_assign->name, j, i);
+								}
+								else                            // type mismatch
+								{
+									sprintf(error,"Mismatch type between inizialized variable %s and expression", var_assign->name);
+									yyerror(error);
+									exit(1); 
+								}
+						}
+					}
+				}
+
+				assign_value_type = T_STRUCT;
+				break;
+			case N_CALL_FUNCTION:
+				sprintf(error, "Cannot inizialize struct variable %s with a function", var_assign->name);
+				yyerror(error);
+				exit(1);
+				break;
+		}
+	}
+
+	// check if types are the same
+	if(var_assign->type != assign_value_type) return 0;
+	else return 1;
+
+}
 
 

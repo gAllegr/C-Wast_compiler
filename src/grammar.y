@@ -17,7 +17,6 @@
 
     AST *ast;                       // Abstract Syntax Tree
     SymTab *symtab;                 // Symbol Table
-    int declaration_state = -1;     // used for semantic check on assignment
 %}
 %error-verbose
 
@@ -184,6 +183,7 @@ declaration: var_type var_decl SEMICOLON
                             case N_ASSIGNMENT:                            
                                 // SEMANTIC CHECK: variable redeclaration
                                 check_redeclaration(symtab, obj->ast_assign->variable->ast_variable->sym_variable->name, scope);
+
                                 // Insert declared variables in Symbol Table
                                 insert_var(symtab, obj->ast_assign->variable->ast_variable->sym_variable, scope);
                                 break;
@@ -445,8 +445,8 @@ parameter_declaration: var_type identifier
                      ;
 
 /* What is inside a function */
-body: statements                                                                    { $$ = new_AST_Body(list_new(),$1); }
-    | {declaration_state=1;} declarations {declaration_state=-1;} statements        { $$ = new_AST_Body($2,$4); }
+body: statements                     { $$ = new_AST_Body(list_new(),$1); }
+    | declarations statements        { $$ = new_AST_Body($1,$2); }
     ;
 
 /* List of statements */
@@ -468,7 +468,28 @@ statements: statement
 statement: SEMICOLON                    {$$ = NULL;}
          | func_call SEMICOLON
          | assignment SEMICOLON
+                {
+                    int init = check_assignment($1, symtab, scope);
+                    if(init == 1)
+                    {
+                        // update Symbol Table
+                        update_inizialization(symtab, $1->ast_assign->variable->ast_variable->sym_variable->name, scope);
+                    }
+                    else                            // type mismatch
+                    {
+                        char error[80];
+                        sprintf(error,"Mismatch type between inizialized variable %s and expression", $$->ast_assign->variable->ast_variable->sym_variable->name);
+                        yyerror(error);
+                        exit(1); 
+                    }
+
+                    $$ = $1;
+                }
          | increment SEMICOLON
+                {
+                    evaluate_expression_type($1, symtab, scope);
+                    $$ = $1;
+                }
          | printf_stat SEMICOLON
          | scanf_stat SEMICOLON
          | if_stat
@@ -762,7 +783,7 @@ identifier: IDENTIFIER
           | identifier O_SQUARE_BRACES ICONST C_SQUARE_BRACES
             {
                 $1->ast_variable->sym_variable->n = atoi($3);
-                $$ = $1;
+                $$ = $1; 
             }
           | identifier O_SQUARE_BRACES identifier C_SQUARE_BRACES
             {
@@ -836,8 +857,8 @@ identifier: IDENTIFIER
                     c2 = c;
                 }
                 // concat identifiers and use it as name for AST *var_struct
-                c1 = concat(3, "", c1,$2,c2);
-                $$ = new_AST_Variable (c1, $1->ast_variable->sym_variable->n, T_STRUCT, NULL, 0);
+                c1 = strdup(concat(3, "", c1,$2,c2));
+                $$ = new_AST_Variable(c1, $1->ast_variable->sym_variable->n, T_STRUCT, NULL, 0);
             }
           ;
 

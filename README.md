@@ -312,19 +312,25 @@ This will limit the issue, but will not fully solve it. Declaration of two diffe
 * array variable dimension must be constant
 * struct elements cannot be inizialized
 * check on variable redeclaration
-* check on inizialization of variables (variables can be inizialized only with constants) **(struct is missing)**
+* check on inizialization of variables (variables can be inizialized only with constants)
 ### Function definition - Parameters
 * parameters cannot have void type
 ### Function call
 * check if a function has been defined
 * check if arguments are in the same number of parameters
 * check if arguments and parameters have same type
+### Assignment statement
+* check if assignment variable and expression have the same type
+**now works only for assignment variable of kind "simple variable"**
+**for now assignment variable is not checked if it's a struct**
+#### Issue
+* an array variable can be assigned to a simple variable
+_Example_
 
+        int z;
+        int k = {0,1};
 
-
-
-
-
+        z = k;
 
 ### Variable used as array index
 * check if has been previously declared and inizialized
