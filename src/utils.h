@@ -38,4 +38,13 @@ void check_args_params(SymTab *symtab, char *scope, char *function_name, List *a
 /* ===== Semantic check on Assignment Node ===== */
 int check_assignment(AST *ast_assignment, SymTab *symtab, char *scope);
 
+/* ===== Check if variable is found in Symbol Table ===== */
+void is_var_declared (AST *ast, SymTab *symtab, char *scope);
+
+/* ===== Verify return identifier's type ===== */
+void verify_return_id_type (AST *ast, SymTab *symtab, char *scope);
+
+/* ===== Verify return statement ===== */
+void check_return(ValType func_type,AST *body, SymTab *symtab, char *scope);
+
 #endif

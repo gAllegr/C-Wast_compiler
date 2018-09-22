@@ -1,6 +1,6 @@
 # Compiler project for FLC exam
 
-Aim of this project is to implement a front-end compiler which transform a C source file into a text file (.wast) written using s-expressions.
+Aim of this project is to implement a front-end compiler which transform a C source file into a text file (.wat) written using s-expressions.
 
 ## Software requirements
 ### Flex
@@ -132,7 +132,7 @@ Examples: `int main ()` or `void main (void)`
 *Examples of allowed syntax can be found in folder* `test/if_tests`<br>
 
 ### Iteration statement (for)
-* Inizialization parameter can be empty or a comma-separated list of variables
+* Inizialization parameter cannot be empty. Can be a single variable or a comma-separated list of variables
 * Loop condition must be present but can't use comma `,` to separate conditions. On the other hand, more conditions can be bounded with logical operators.
 * Increment statement cannot be empty, because we had a shift/reduce conflict that we can't understand how to solve.
 
@@ -227,7 +227,6 @@ For each variable, the following information are saved:
 * dimension
 * type
 * struct composition (only for struct variables)
-* if variable has been declared
 * if variable has been inizialized
 <br><br>
 
@@ -321,17 +320,19 @@ This will limit the issue, but will not fully solve it. Declaration of two diffe
 * check if arguments and parameters have same type
 ### Assignment statement
 * check if assignment variable and expression have the same type
-**now works only for assignment variable of kind "simple variable"**
-**for now assignment variable is not checked if it's a struct**
-#### Issue
-* an array variable can be assigned to a simple variable
-_Example_
-
-        int z;
-        int k = {0,1};
-
-        z = k;
-
+* do not make any check if variable on the left is an array variable of struct
+* do not make any check if variable on the right of assignment is a struct variable!!!
+### Expression
+* check that all types are compatible among them
+### I/O statements
+* no checks on string content passed to printf and scanf
+* on both I/O function, check if variables passed have been declared
+* for scanf function, also set variables as inizialized
+### Return statement
+* verify that variable returned is a simple variable
+* if function returns void type, compiler gives warning message if there are valorized returns
+* if function returns something, compiler gives warning message if there are no return statements
+* if function returns something, compiler gives warning message if return statement type mismatches
 ### Variable used as array index
 * check if has been previously declared and inizialized
 * check if it's an integer variable

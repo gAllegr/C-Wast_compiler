@@ -17,7 +17,7 @@ int main ()
 	punto2.x = 10;
 	punto2.y = 20;
 	
-	punto1.x = punto1.y * 2;
+	punto1.x = 7 * 2;
 
 	return 0;
 }

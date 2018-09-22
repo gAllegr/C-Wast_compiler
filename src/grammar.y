@@ -401,6 +401,7 @@ func_definition: var_type identifier
                  }
                  C_ROUND_BRACES O_CURLY_BRACES body C_CURLY_BRACES
                     {
+                        check_return($1,$9,symtab,scope);
                         $<node>3->ast_def_function->body = $9;
                         $$ = $<node>3;
                     }
@@ -493,6 +494,10 @@ statement: SEMICOLON                    {$$ = NULL;}
          | printf_stat SEMICOLON
          | scanf_stat SEMICOLON
          | if_stat
+                {
+                    evaluate_expression_type($1->ast_if_stat->condition, symtab, scope);
+                    $$ = $1;
+                }
          | for_stat
          | return_stat SEMICOLON
          ;
@@ -651,12 +656,18 @@ printf_stat: PRINTF O_ROUND_BRACES STRCONST C_ROUND_BRACES
 /* Recursion allows to print out many variables */
 printed_var: identifier
                 {
+                    // check if variable has been declared
+                    is_var_declared ($1, symtab, scope);
+
                     List *prin_var = list_new();
                     list_append(prin_var, $1);
                     $$ = prin_var;
                 }
            | printed_var COMMA identifier
                 {
+                    // check if variable has been declared
+                    is_var_declared ($3, symtab, scope);
+
                     list_append($1,$3);
                     $$ = $1;
                 }
@@ -672,12 +683,20 @@ scanf_stat: SCANF O_ROUND_BRACES STRCONST COMMA retrieved_var C_ROUND_BRACES
 /* Recursion allows to retrieve more than one value with a single scanf instruction */
 retrieved_var: E_COMM identifier
                 {
+                    // check if variable has been declared and update inizialization flag
+                    is_var_declared ($2, symtab, scope);
+                    update_inizialization(symtab, $2->ast_variable->sym_variable->name, scope);
+
                     List *retr_var = list_new();
                     list_append(retr_var, $2);
                     $$ = retr_var;
                 }
               | retrieved_var COMMA E_COMM identifier
                 {
+                    // check if variable has been declared and update inizialization flag
+                    is_var_declared ($4, symtab, scope);
+                    update_inizialization(symtab, $4->ast_variable->sym_variable->name, scope);
+
                     list_append($1,$4);
                     $$ = $1;
                 }
@@ -710,27 +729,50 @@ Condition must be checked to be a conditional statement, not a math expression
 Condition cannot use comma to separate conditions */
 for_stat: FOR O_ROUND_BRACES init_for SEMICOLON expr SEMICOLON incr_for C_ROUND_BRACES block
             {
+                evaluate_expression_type($5, symtab, scope);
                 $$ = new_AST_For_Stat($3,$5,$7,$9);
             }
         ;
 
 /* Inizialization of for loop can be :
-- empty (variable is inizializated to 0)
 - a comma-separated list of inizialited variables */
-init_for: /* empty */
+init_for: assignment
             {
-                List *init_list = list_new();
-                $$ = init_list;
-            }
-        | assignment
-            {
+                int init = check_assignment($1, symtab, scope);
+                if(init == 1)                   // types are the same
+                {
+                    // update Symbol Table
+                    update_inizialization(symtab, $1->ast_assign->variable->ast_variable->sym_variable->name, scope);
+                }
+                else                            // type mismatch
+                {
+                    char error[80];
+                    sprintf(error,"Mismatch type between inizialized variable %s and expression", $1->ast_assign->variable->ast_variable->sym_variable->name);
+                    yyerror(error);
+                    exit(1); 
+                }
                 List *init_list = list_new();
                 list_append(init_list, $1);
                 $$ = init_list;
             }
-        | init_for COMMA init_for
+        | init_for COMMA assignment
             {
-                $$ = list_merge($1,$3);
+                int init = check_assignment($3, symtab, scope);
+                if(init == 1)                   // types are the same
+                {
+                    // update Symbol Table
+                    update_inizialization(symtab, $3->ast_assign->variable->ast_variable->sym_variable->name, scope);
+                }
+                else                            // type mismatch
+                {
+                    char error[80];
+                    sprintf(error,"Mismatch type between inizialized variable %s and expression", $3->ast_assign->variable->ast_variable->sym_variable->name);
+                    yyerror(error);
+                    exit(1); 
+                }
+
+                list_append($1,$3);
+                $$ = $1;
             }
         ;
 
@@ -738,12 +780,14 @@ init_for: /* empty */
 It can be a comma-separated list of incrementation statements */
 incr_for: expr
             {
+                evaluate_expression_type($1, symtab, scope);
                 List *incr_list = list_new();
                 list_append(incr_list, $1);
                 $$ = incr_list;
             }
         | incr_for COMMA expr
             {
+                evaluate_expression_type($3, symtab, scope);
                 list_append($1, $3);
                 $$ = $1;
             }
@@ -760,6 +804,8 @@ return_stat: RETURN
                }
            | RETURN identifier
                {
+                   is_var_declared ($2, symtab, scope);
+                   verify_return_id_type ($2, symtab, scope);
                    $$ = new_AST_Return_Stat($2);
                }
            ;

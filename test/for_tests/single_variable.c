@@ -13,7 +13,7 @@ int main (void)
     printf("How many numbers you want to sum?\n");
     scanf("%d", &N);
  
-    for (i = 1 ; i <= N ; i++)
+    for (i = 0 ; i <= N ; i++)
     {
         sum = sum + i;
     }
