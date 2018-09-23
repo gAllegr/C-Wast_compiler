@@ -33,7 +33,7 @@ exp 			([Ee][+-]?{digit}*)
 /* alphabetics */
 alpha			[a-zA-Z]
 underscore		[_]
-char			\".\"
+char			\'.\'
 string			\"(\\.|[^"\\])*\"
 header			#include{ws}<{alpha}*(\.{alpha}*)?>
 id				{alpha}({alpha}|{digit}|{underscore})*

@@ -95,12 +95,12 @@ C is a procedural language, so the main structure of a program is composed only 
 *An example of not allowed declaration can be found at* `test/not_working/struct.c` 
 
 ### Function declarations
-* Functions can return only *void* or *struct* or basic types
+* Functions can return only *void* or basic types
 * Support void parameters<br>
 Examples: `int main ()` or `void main (void)`
 * A single or more parameters can be passed by values 
 * During function definition, parameters can be specified by *type identifier*
-* Support struct parameters
+* Do not support struct parameters
 * Do not support parameters passed by reference
 * This compilers does not consider the possibility to define a function prototype. So something like `int sum (int, int);` is not to be considered as an optional way to define functions
 
@@ -132,7 +132,7 @@ Examples: `int main ()` or `void main (void)`
 *Examples of allowed syntax can be found in folder* `test/if_tests`<br>
 
 ### Iteration statement (for)
-* Inizialization parameter can be empty or a comma-separated list of variables
+* Inizialization parameter cannot be empty. Can be a single variable or a comma-separated list of variables
 * Loop condition must be present but can't use comma `,` to separate conditions. On the other hand, more conditions can be bounded with logical operators.
 * Increment statement cannot be empty, because we had a shift/reduce conflict that we can't understand how to solve.
 
@@ -187,12 +187,12 @@ _Printed Tree_
                     VARIABLE (INT type) s
                 Assignment EXPRESSION
                     BinaryExpr (Addition) LEFT
-                        VARIABLE (Unknown type) a
+                        VARIABLE (INT type) a
                     BinaryExpr (Addition) RIGHT
-                        VARIABLE (Unknown type) b
+                        VARIABLE (INT type) b
             Function Body STATEMENTS
                 Return_Statement
-                    VARIABLE (Unknown type) s
+                    VARIABLE (INT type) s
         Function Definition NAME
             VARIABLE (INT type) main
         Function Definition PARAMETERS
@@ -210,13 +210,13 @@ _Printed Tree_
                 VARIABLE (INT type) somma
             Function Body STATEMENTS
                 Assignment VARIABLE
-                    VARIABLE (Unknown type) somma
+                    VARIABLE (INT type) somma
                 Assignment EXPRESSION
                     Function Call NAME
-                        VARIABLE (Unknown type) sum
+                        VARIABLE (INT type) sum
                     Function Call ARGUMENTS
-                        VARIABLE (Unknown type) c
-                        VARIABLE (Unknown type) d
+                        VARIABLE (INT type) c
+                        VARIABLE (INT type) d
                 Return_Statement
                     INT_CONSTANT 0
 
@@ -227,7 +227,6 @@ For each variable, the following information are saved:
 * dimension
 * type
 * struct composition (only for struct variables)
-* if variable has been declared
 * if variable has been inizialized
 <br><br>
 
@@ -307,7 +306,37 @@ _With what could be replaced_<br>
 This will limit the issue, but will not fully solve it. Declaration of two different struct with same variable name will generate anyway the segmentation fault.
 
 ## Semantic checks
-**Next step!**
+### Declarations
+* variables cannot have void type
+* array variable dimension must be constant
+* struct elements cannot be inizialized
+* check on variable redeclaration
+* check on inizialization of variables (variables can be inizialized only with constants)
+### Function definition - Parameters
+* parameters cannot have void type
+### Function call
+* check if a function has been defined
+* check if arguments are in the same number of parameters
+* check if arguments and parameters have same type
+### Assignment statement
+* check if assignment variable and expression have the same type
+* if variable on the left of assignment is a struct variable, checks only if it has been declared
+* do not make any check if variable on the left is an array variable of struct
+### Expression
+* check that all types are compatible among them
+### I/O statements
+* no checks on string content passed to printf and scanf
+* on both I/O function, check if variables passed have been declared
+* for scanf function, also set variables as inizialized
+### Return statement
+* verify that variable returned is a simple variable
+* if function returns void type, compiler gives warning message if there are valorized returns
+* if function returns something, compiler gives warning message if there are no return statements
+* if function returns something, compiler gives warning message if return statement type mismatches
+### Variable used as array index
+* check if has been previously declared and inizialized
+* check if it's an integer variable
+* check that it's a simple variable
 
 ## Code generator
 **Last one!**

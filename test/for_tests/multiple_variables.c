@@ -8,7 +8,7 @@
 
 int main (void)
 {
-    int N, i, sum = 0;
+    int N, i, t, sum = 0;
  
     printf("How many numbers you want to sum?\n");
     scanf("%d", &N);

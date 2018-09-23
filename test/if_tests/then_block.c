@@ -2,12 +2,12 @@
 
 int main(void) 
 {
-    int cond = 5;
+  int cond = 5;
 
-    if ( cond > 5)
-    {
-		printf ( "Variable has a value greater then 5\n" );
-    }
+  if ( cond > 5)
+  {
+  printf ( "Variable has a value greater then 5\n" );
+  }
 
-    return 0;	
+  return 0;	
 }

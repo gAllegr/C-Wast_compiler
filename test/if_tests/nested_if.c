@@ -10,9 +10,9 @@ int main(void)
 
     if ( cond > 5)
     {
-	if ( c >= 2 ) d = "d";
+	if ( c >= 2 ) d = 'd';
     } else {
-	b = "b";
+	b = 'b';
     }
     return 0;	
 }

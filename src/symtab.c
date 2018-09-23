@@ -4,14 +4,13 @@
 #include <ctype.h>
 #include "symtab.h"
 
-SymTab_Variables *new_SymTab_Variables (char *name, int n, ValType type, struct_info *s_info, int declared, int inizialized)
+SymTab_Variables *new_SymTab_Variables (char *name, int n, ValType type, struct_info *s_info, int inizialized)
 {
     SymTab_Variables *sym_variable = malloc(sizeof(SymTab_Variables));
     sym_variable->name = name;
     sym_variable->n = n;
     sym_variable->type = type;
     sym_variable->s_info = s_info;
-    sym_variable->declared = declared;
     sym_variable->inizialized = inizialized;
 
     return sym_variable;
@@ -44,6 +43,34 @@ SymTab *init_symtab()
 
     return sym_tab;
 }
+
+SymTab_Variables *get_symtab_var(SymTab *symtab, char *scope, int pos, int where)
+{
+    int f_pos;
+    SymTab_Variables *a;
+	SymTab_Functions *f;	
+
+    // retrieve variable type from Symbol Table
+    switch(where)
+    {
+        case 0:     // variable is global
+            a = list_get(symtab->global_variables,pos);
+            break;
+        case 1:     // variable is a parameter
+            f_pos = lookup(symtab, scope, "GLOBAL",&where);
+            f = list_get(symtab->functions,f_pos);
+            a = list_get(f->parameters,pos);
+            break;
+        case 2:     // variable is local
+            f_pos = lookup(symtab, scope, "GLOBAL",&where);
+            f = list_get(symtab->functions,f_pos);
+            a = list_get(f->local_variables,pos);
+            break;
+    }
+
+    return a;
+}
+
 
 void insert_var(SymTab *symtab, SymTab_Variables *sym_var, char *scope)
 {
@@ -257,8 +284,8 @@ void print_symtab(SymTab *symtab)
     }
 }
 
-/* Lookup function returns both position and where the variable is within the Symbol Table */
-int lookup(SymTab *symtab, char *name, char *scope)
+/* Lookup function returns position of the variable within the Symbol Table */
+int lookup(SymTab *symtab, char *name, char *scope, int *where)
 {
     int i, pos=-1;
     SymTab_Variables *v;
@@ -269,9 +296,21 @@ int lookup(SymTab *symtab, char *name, char *scope)
         {
             v = list_get(symtab->global_variables,i);
 
-            if(name == v->name)
+            if(strcmp(name,v->name) == 0)
             {
                 pos = i;
+                *where = 0;
+                break;
+            }
+        }
+        SymTab_Functions *f;
+        for(i=0; i<list_length(symtab->functions);i++)
+        {   
+            f = list_get(symtab->functions,i);
+            if(strcmp(name,f->func_name->name)==0)
+            {
+                pos = i;
+                *where = 3;
                 break;
             }
         }
@@ -282,16 +321,17 @@ int lookup(SymTab *symtab, char *name, char *scope)
         for(int i=0; i<list_length(symtab->functions);i++)
         {
             f = list_get(symtab->functions,i);
-            if(scope == f->func_name->name)
+            if(strcmp(scope,f->func_name->name) == 0)
             {
                 // check if name is a parameter name
-                for(i=0; i<list_length(f->parameters);i++)
+                for(int j=0; j<list_length(f->parameters);j++)
                 {
-                    v = list_get(f->parameters,i);
+                    v = list_get(f->parameters,j);
 
-                    if(name == v->name)
+                    if(strcmp(name,v->name) == 0)
                     {
-                        pos = i;
+                        pos = j;
+                        *where = 1;
                         break;
                     }
                 }
@@ -299,25 +339,54 @@ int lookup(SymTab *symtab, char *name, char *scope)
                 if(pos==-1)         // name is not a parameter
                 {
                     // check if name is a local variable name
-                    for(i=0; i<list_length(f->local_variables);i++)
+                    for(int j=0; j<list_length(f->local_variables);j++)
                     {
-                        v = list_get(f->local_variables,i);
+                        v = list_get(f->local_variables,j);
 
-                        if(name == v->name)
+                        if(strcmp(name,v->name) == 0)
                         {
-                            pos = i;
+                            pos = j;
+                            *where = 2;
                             break;
                         }
                     }
                     
                     // name is not a local variable
-                    if(pos==-1) pos=lookup(symtab, name, "GLOBAL");
+                    if(pos==-1) pos=lookup(symtab, name, "GLOBAL",&*where);
                 }
             }
         }
     }
 
     return pos;
+}
+
+/* Check if a variable with same name has already been declared */
+void check_redeclaration(SymTab *symtab, char *name, char *scope)
+{
+    extern void yyerror(const char *s);
+
+    int where, pos = lookup(symtab, name, scope, &where);
+    char error[100];
+                                
+    if(pos != -1)                                   // variable found
+    {
+        if(strcmp(scope,"GLOBAL")==0)               // scope = GLOBAL
+        {
+            sprintf(error,"Redeclaration of variable %s", name);
+            yyerror(error);
+            exit(1);
+        }
+        else                                        // scope = FUNCTION
+        {
+            if(where == 1 || where == 2)            // variable found is not global
+            {
+                sprintf(error,"Redeclaration of variable %s", name);
+                yyerror(error);
+                exit(1);
+            }
+        }
+    }
 }
 
 /* Remove a specific SymTab_Variable from Symbol Table */

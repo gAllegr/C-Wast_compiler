@@ -156,7 +156,7 @@ struct AST {
 
 /* Functions */
 AST *new_AST_Const(ValType type, char *value);
-AST *new_AST_Variable (char *name, int n, ValType type, struct_info *s_info, int declared, int inizialized);
+AST *new_AST_Variable (char *name, int n, ValType type, struct_info *s_info, int inizialized);
 AST *new_AST_Unary_Expr (UnaryExprType unary_type, AST *expression);
 AST *new_AST_Binary_Expr (BinaryExprType binary_type, AST *right, AST *left);
 AST *new_AST_Assign (AST *variable, AST *expression);
