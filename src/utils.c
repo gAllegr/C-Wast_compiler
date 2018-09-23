@@ -177,49 +177,94 @@ ValType evaluate_expression_type(AST *ast, SymTab *symtab, char *scope)
 	AST *l, *r;
 	ValType l_type,r_type;
 
+	char error[80];
+
 	switch(ast->type)
 	{
 		case N_CONSTANT:
 			return ast->ast_constant->type;
 			break;
 		case N_VARIABLE:
-			// check if variable has been declared
-			pos = lookup(symtab, ast->ast_variable->sym_variable->name, scope, &where);
-			if(pos == -1)
+			if(ast->ast_variable->sym_variable->type != T_STRUCT)
 			{
-				char error[50];
-				sprintf(error,"Expression variable %s not declared",ast->ast_variable->sym_variable->name);
-				yyerror(error);
-				exit(1); 
+				// NOT STRUCT VARIABLE
+				// check if variable has been declared
+				pos = lookup(symtab, ast->ast_variable->sym_variable->name, scope, &where);
+
+				if(pos == -1)
+				{
+					sprintf(error,"Expression variable %s not declared",ast->ast_variable->sym_variable->name);
+					yyerror(error);
+					exit(1); 
+				}
+				else
+				{
+					if(where == 3)
+					{
+						// lookup discover argument has same name of a function
+						sprintf(error,"Variable %s has not been declared as variable, but it's a function", ast->ast_variable->sym_variable->name);
+						yyerror(error);
+						exit(1);  
+					}
+				}
+
+				// check if variable has been inizialized
+				var = get_symtab_var(symtab, scope, pos, where);
+				if(var->inizialized == 0)
+				{
+					if(ast->ast_variable->sym_variable->n == -1)
+						sprintf(error,"Inizialization variable %s has not been valorized",ast->ast_variable->sym_variable->name);
+					else
+						sprintf(error,"Inizialization variable %s[%d] has not been valorized",ast->ast_variable->sym_variable->name,ast->ast_variable->sym_variable->n);
+					yyerror(error);
+					exit(1); 
+				}
+				// update variable type in AST
+				ast->ast_variable->sym_variable->type = var->type;
+
+				l_type = var->type;
 			}
 			else
 			{
-				if(where == 3)
+				// STRUCT VARIABLE
+				// check if variable on the left of assignment has been declared
+				char str[15] = "";
+				strcpy(str, ast->ast_variable->sym_variable->name);
+				char *name = strtok(str, ".");
+				pos = lookup(symtab, name, scope, &where);
+
+				if(pos == -1)
 				{
-					// lookup discover argument has same name of a function
-					char error[80];
-					sprintf(error,"Variable %s has not been declared as variable, but it's a function", ast->ast_variable->sym_variable->name);
+					sprintf(error,"Expression variable %s not declared",ast->ast_variable->sym_variable->name);
 					yyerror(error);
-					exit(1);  
-				}				
-			}
+					exit(1); 
+				}
+				// retrieve variable from symbol table
+				SymTab_Variables *a = get_symtab_var(symtab, scope, pos, where);
+				
+				// find element inside variable
+				SymTab_Variables *e;
+				char *element_name = strtok(NULL, ".");			// get name of the interested struct element
+				int e_pos = -1;
+				List *l =a->s_info->struct_element->items[0];
+				for(int i=0; i<list_length(l);i++)
+				{
+					e = list_get(l,i);
+					if(strcmp(e->name,element_name)==0) e_pos = i;
+				}
+				if(e_pos == -1)
+				{
+					sprintf(error,"Struct %s has no field %s", a->name, element_name);
+					yyerror(error);
+					exit(1);
+				}
+				// retrieve element from variable
+				e = list_get(a->s_info->struct_element->items[0],e_pos);
 
-			// check if variable has been inizialized
-			var = get_symtab_var(symtab, scope, pos, where);
-			if(var->inizialized == 0)
-			{
-				char error[60];
-				if(ast->ast_variable->sym_variable->n == -1)
-					sprintf(error,"Inizialization variable %s has not been valorized",ast->ast_variable->sym_variable->name);
-				else
-					sprintf(error,"Inizialization variable %s[%d] has not been valorized",ast->ast_variable->sym_variable->name,ast->ast_variable->sym_variable->n);
-				yyerror(error);
-				exit(1); 
-			}
-			// update variable type in AST
-			ast->ast_variable->sym_variable->type = var->type;
+				l_type = e->type;
+			}	
 
-			return var->type;
+			return l_type;
 			break;
 		case N_UNARY_EXPR:
 			l = ast->ast_unary_expr->expression;

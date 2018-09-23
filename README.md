@@ -1,6 +1,6 @@
 # Compiler project for FLC exam
 
-Aim of this project is to implement a front-end compiler which transform a C source file into a text file (.wat) written using s-expressions.
+Aim of this project is to implement a front-end compiler which transform a C source file into a text file (.wast) written using s-expressions.
 
 ## Software requirements
 ### Flex
@@ -187,12 +187,12 @@ _Printed Tree_
                     VARIABLE (INT type) s
                 Assignment EXPRESSION
                     BinaryExpr (Addition) LEFT
-                        VARIABLE (Unknown type) a
+                        VARIABLE (INT type) a
                     BinaryExpr (Addition) RIGHT
-                        VARIABLE (Unknown type) b
+                        VARIABLE (INT type) b
             Function Body STATEMENTS
                 Return_Statement
-                    VARIABLE (Unknown type) s
+                    VARIABLE (INT type) s
         Function Definition NAME
             VARIABLE (INT type) main
         Function Definition PARAMETERS
@@ -210,13 +210,13 @@ _Printed Tree_
                 VARIABLE (INT type) somma
             Function Body STATEMENTS
                 Assignment VARIABLE
-                    VARIABLE (Unknown type) somma
+                    VARIABLE (INT type) somma
                 Assignment EXPRESSION
                     Function Call NAME
-                        VARIABLE (Unknown type) sum
+                        VARIABLE (INT type) sum
                     Function Call ARGUMENTS
-                        VARIABLE (Unknown type) c
-                        VARIABLE (Unknown type) d
+                        VARIABLE (INT type) c
+                        VARIABLE (INT type) d
                 Return_Statement
                     INT_CONSTANT 0
 
@@ -320,8 +320,8 @@ This will limit the issue, but will not fully solve it. Declaration of two diffe
 * check if arguments and parameters have same type
 ### Assignment statement
 * check if assignment variable and expression have the same type
+* if variable on the left of assignment is a struct variable, checks only if it has been declared
 * do not make any check if variable on the left is an array variable of struct
-* do not make any check if variable on the right of assignment is a struct variable!!!
 ### Expression
 * check that all types are compatible among them
 ### I/O statements
