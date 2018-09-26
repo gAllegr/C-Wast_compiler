@@ -1,0 +1,17 @@
+(module
+  (import "console" "log" (func $log (param i32)))
+  (func $sum (param $lhs i32) (param $rhs i32) (result i32)
+    (i32.add
+    (get_local $lhs)
+    (get_local $rhs)
+    )
+  )
+  (func (export "main") (local $c i32) (local $d i32) (local $somma i32)
+    (set_local $c (i32.const 1))
+    (set_local $d (i32.const 2))
+    (get_local $c)
+    (get_local $d)
+    (set_local $somma (call $sum))
+    (get_local $somma)
+    call $log)
+)
