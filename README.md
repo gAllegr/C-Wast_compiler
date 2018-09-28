@@ -325,7 +325,7 @@ This will limit the issue, but will not fully solve it. Declaration of two diffe
 ### Expression
 * check that all types are compatible among them
 ### I/O statements
-* no checks on string content passed to printf and scanf
+* no checks on string content passed to printf and scanf (number and types)
 * on both I/O function, check if variables passed have been declared
 * for scanf function, also set variables as inizialized
 ### Return statement
