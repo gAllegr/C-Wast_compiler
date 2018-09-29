@@ -7,7 +7,7 @@
   (data (i32.const 150) "Variable value is less than or equal to 5")
   (data (i32.const 200) "Variable value is greater than 5")
   (data (i32.const 250) "Variable value is greater than or equal to 5")
-  (func (export "main") 
+  (func (export "main") (result i32)
     (local $cond i32)
     (set_local $cond (i32.const 5))
 

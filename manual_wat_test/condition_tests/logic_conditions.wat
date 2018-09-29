@@ -4,7 +4,7 @@
   (data (i32.const 0) "NOT case")
   (data (i32.const 50) "AND case")
   (data (i32.const 100) "OR case")
-  (func (export "main") (param )
+  (func (export "main") (result i32)
     (local $cond i32)
     (set_local $cond (i32.const 5))
 

@@ -25,7 +25,6 @@
         function createForm()
         {
             var input = document.createElement("input");
-            input.setAttribute('id',"input");
             input.setAttribute('type',"number");
             input.setAttribute('name',"number");
             input.setAttribute('onchange',"getNumber(this.value)");            
@@ -43,12 +42,15 @@
         function scanfFunction()
         {
             createForm();
+            return value.value;
         }
 
         var importObject = {
             console: {
                 str_log: consoleLogString,
                 log: function(arg) { console.log(arg); },
+            },
+            env : {
                 scanf: scanfFunction
             },
             js: {
@@ -61,6 +63,7 @@
         WebAssembly.instantiateStreaming(fetch('input_output.wasm'), importObject)
             .then(obj => {
                 obj.instance.exports.main();
+                obj.instance.exports.setValue();
             });
     </script>
 </body>

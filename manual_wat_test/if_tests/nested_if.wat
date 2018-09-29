@@ -4,7 +4,7 @@
   (global $a i32 (i32.const 0))
   (data (i32.const 0) "d")
   (data (i32.const 50) "b")
-  (func (export "main") 
+  (func (export "main") (result i32)
     (local $cond i32)
     (local $c i32)
     (local $b i32)

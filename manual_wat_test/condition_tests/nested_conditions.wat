@@ -7,7 +7,7 @@
   (data (i32.const 150) "OR of a AND cond and a simple cond")
   (data (i32.const 200) "NOT of OR conditions")
   (data (i32.const 250) "OR of a AND cond and a simple cond")
-  (func (export "main") 
+  (func (export "main") (result i32)
     (local $cond i32)
     (set_local $cond (i32.const 5))
 
