@@ -9,6 +9,7 @@
     #include "../src/ast.h"
     #include "../src/list.h"
     #include "../src/symtab.h"
+    #include "../src/wat.h"
 
 	int yylex();
     void yyerror (const char *s);
@@ -968,11 +969,13 @@ int main (void)
         printf("\n\nNow I'll print the symbol table!\n\n");
         print_symtab(symtab);
 
-        /* other stuff (code_gen) */
+        /* code_generation(ast, symtab); */
 
         printf("Now I'll free memory occupied by abstract syntax tree!\n");
         free_ast(ast);
         printf("Memory is free!\n\n");
+
+        fclose(fp);
     }
 	else printf("\nWRONG SYNTAX! ç.ç\n");
 
