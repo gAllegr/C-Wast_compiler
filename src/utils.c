@@ -188,6 +188,13 @@ ValType evaluate_expression_type(AST *ast, SymTab *symtab, char *scope)
 			if(ast->ast_variable->sym_variable->type != T_STRUCT)
 			{
 				// NOT STRUCT VARIABLE
+				if(ast->ast_variable->sym_variable->type == T_CHAR)
+				{
+					sprintf(error,"Expression variable %s is a char",ast->ast_variable->sym_variable->name);
+					yyerror(error);
+					exit(1); 
+				}
+
 				// check if variable has been declared
 				pos = lookup(symtab, ast->ast_variable->sym_variable->name, scope, &where);
 
@@ -258,8 +265,16 @@ ValType evaluate_expression_type(AST *ast, SymTab *symtab, char *scope)
 					yyerror(error);
 					exit(1);
 				}
+
 				// retrieve element from variable
 				e = list_get(a->s_info->struct_element->items[0],e_pos);
+
+				if(e->type == T_CHAR)
+				{
+					sprintf(error,"Expression variable %s is a char",e->name);
+					yyerror(error);
+					exit(1); 
+				}
 
 				l_type = e->type;
 			}	

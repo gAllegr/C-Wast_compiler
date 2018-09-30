@@ -33,8 +33,8 @@ void code_generation(AST *ast, SymTab *symtab)
 
     scope = "GLOBAL";
     
-    // extract code from ast and symbol table
-    char *text = extract_code(ast, symtab, scope, 2);
+    // convert code from ast and symbol table
+    char *text = convert_code(ast, symtab, scope, 2);
 
 
     fclose(fp);
@@ -51,6 +51,7 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
 
     switch(ast->type) {
         case N_CONSTANT:
+            ;
             char temp[20];
             switch(ast->ast_constant->type) {
                 case T_INT:
@@ -99,34 +100,40 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
         
             int where;
             lookup(symtab, ast->ast_variable->sym_variable->name, scope, where);
-            if(where == 0)
-                sprintf(temp, "global $%s", ast->ast_variable->sym_variable->name);
-            else
-                sprintf(temp, "local $%s", ast->ast_variable->sym_variable->name);
-            text = temp;
+            if(where == 0) text = concat(2,"", "global $", ast->ast_variable->sym_variable->name);
+            else text = concat(2,"", "local $", ast->ast_variable->sym_variable->name);
             break;
         case N_UNARY_EXPR:
+            text = convert_code(ast->ast_unary_expr->expression, symtab, scope, 0);
+            ValType type = evaluate_expression_type(ast, symtab, scope);
             switch(ast->ast_unary_expr->unary_type)
             {
                 case U_INC:
                     // Increment works only on variables
-                    text = extract_code(ast->ast_unary_expr->expression, symtab, 0);
-                    text = concat(3, "", "(i32.add (get_", text, ") (i32.const 1))");
+                    if(type==T_INT) text = concat(3, "", "(i32.add (get_", text, ") (i32.const 1))");
+                    else text = concat(3, "", "(f32.add (get_", text, ") (f32.const 1.0))");
                     break;
                 case U_DEC:
                     // Decrement works only on variables
-                    text = extract_code(ast->ast_unary_expr->expression, symtab, 0);
-                    text = concat(3, "", "(i32.sub (get_", text, ") (i32.const 1))");
+                    if(type==T_INT) text = concat(3, "", "(i32.sub (get_", text, ") (i32.const 1))");
+                    else text = concat(3, "", "(f32.sub (get_", text, ") (f32.const 1.0))");
                     break;
                 case U_REV:
-                    text = extract_code(ast->ast_unary_expr->expression, symtab, 0);
                     if(ast->ast_unary_expr->expression->type == N_VARIABLE)
-                        text = concat(3, "", "(i32.mul (get_", text, ") (i32.const -1))");
+                        if(type==T_INT) text = concat(3, "", "(i32.mul (get_", text, ") (i32.const -1))");
+                        else text = concat(3, "", "(f32.neg (get_", text, "))");
                     else
-                        text = concat(3, "", "(i32.mul ", text, " (i32.const -1))");
+                        if(type==T_INT) text = concat(3, "", "(i32.mul ", text, " (i32.const -1))");
+                        else text = concat(3, "", "(f32.neg ", text, ")");
                     break;
                 case U_NOT:
-                    text = extract_code(ast->ast_unary_expr->expression, symtab, 0);
+                    if(type == T_FLOAT)
+                    {
+                        // Not operation for float variables is not defined
+                        printf("Sorry, cannot resolve NOT operation for float in WebAssembly");
+                        exit(1);
+                    }
+
                     if(ast->ast_unary_expr->expression->type == N_VARIABLE)
                         text = concat(3, "", "(i32.eqz (get_", text, "))");
                     else
@@ -135,82 +142,93 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
             }
             break;
         case N_BINARY_EXPR:
-            char *l_temp, *r_temp;
+            ;
+            char *l_temp = extract_code(ast->ast_binary_expr->left, symtab, 0);
+            char *r_temp = extract_code(ast->ast_binary_expr->right, symtab, 0);
+            ValType type = evaluate_expression_type(ast, symtab, scope);
+
+            if(ast->ast_binary_expr->left->type == N_VARIABLE) l_temp = concat(3,"","(get_",l_temp,")");
+            if(ast->ast_binary_expr->right->type == N_VARIABLE) r_temp = concat(3,"","(get_",r_temp,")");
+
             switch(ast->ast_binary_expr->binary_type)
             {
                 case B_ADD:
-                    
-                    return "BinaryExpr (Addition)";
+                    if(type==T_INT) text = concat(5, "", "(i32.add ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.add ", l_temp, " ", r_temp, ")");                    
                     break;
                 case B_SUB:
-                    return "BinaryExpr (Subtraction)";
+                    if(type==T_INT) text = concat(5, "", "(i32.sub ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.sub ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_MUL:
-                    return "BinaryExpr (Multiplication)";
+                    if(type==T_INT) text = concat(5, "", "(i32.mul ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.mul ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_DIV:
-                    return "BinaryExpr (Division)";
+                    if(type==T_INT) text = concat(5, "", "(i32.div_s ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.div ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_EQ:
-                    return "BinaryExpr (Equal)";
+                    if(type==T_INT) text = concat(5, "", "(i32.eq ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.eq ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_NE:
-                    return "BinaryExpr (Not Equal)";
+                    if(type==T_INT) text = concat(5, "", "(i32.ne ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.ne ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_LT:
-                    return "BinaryExpr (Less Than)";
+                    if(type==T_INT) text = concat(5, "", "(i32.lt_s ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.lt ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_LE:
-                    return "BinaryExpr (Less or Equal Than)";
+                    if(type==T_INT) text = concat(5, "", "(i32.le_s ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.le ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_GT:
-                    return "BinaryExpr (Greater Than)";
+                    if(type==T_INT) text = concat(5, "", "(i32.gt_s ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.gt ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_GE:
-                    return "BinaryExpr (Greater or Equal Than)";
+                    if(type==T_INT) text = concat(5, "", "(i32.ge_s ", l_temp, " ", r_temp, ")");
+                    else text = concat(5, "", "(f32.ge ", l_temp, " ", r_temp, ")");   
                     break;
                 case B_AND:
-                    return "BinaryExpr (Logical And)";
+                    if(type == T_FLOAT)
+                    {
+                        // Not operation for float variables is not defined
+                        printf("Sorry, cannot resolve AND operation for float in WebAssembly");
+                        exit(1);
+                    }
+                    text = concat(5, "", "(i32.and ", l_temp, " ", r_temp, ")");
                     break;
                 case B_OR:
-                    return "BinaryExpr (Logical Or)";
+                    if(type == T_FLOAT)
+                    {
+                        // Not operation for float variables is not defined
+                        printf("Sorry, cannot resolve OR operation for float in WebAssembly");
+                        exit(1);
+                    }
+                    text = concat(5, "", "(i32.or ", l_temp, " ", r_temp, ")");
                     break;
             }
-
-
-
-
-
-
-
-
-
-
-
-
-            printf("%s LEFT\n", ast_type_name(ast));
-            print_ast(ast->ast_binary_expr->left,indent+4);
-
-            for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s RIGHT\n", ast_type_name(ast));            
-            print_ast(ast->ast_binary_expr->right,indent+4);
             break;
-
-
-
-
-
-
-
-
         case N_ASSIGNMENT:
-            printf("%s VARIABLE\n", ast_type_name(ast));
-            print_ast(ast->ast_assign->variable,indent+4);
-            for (int i=0; i<indent; i++) { printf(" "); }
-            printf("%s EXPRESSION\n", ast_type_name(ast));
-            print_ast(ast->ast_assign->expression,indent+4);
+            ;
+            char *v = convert_code(ast->ast_assign->variable, symtab, scope, 0);
+            char *e = convert_code(ast->ast_assign->expression, symtab, scope, 0);
+            text = concat(5,"","(set_", v, " ", e, ")");
             break;
         case N_IF_STATEMENT:
+
+
+
+
+
+
+
+
+
+        
             printf("%s CONDITION\n", ast_type_name(ast));
             print_ast(ast->ast_if_stat->condition,indent+4);
 
@@ -225,6 +243,14 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
                 print_ast(ast->ast_if_stat->else_branch,indent+4);
             }
             break;
+
+
+
+
+
+
+
+
         case N_FOR_STATEMENT:
             printf("%s INIZIALIZATION\n", ast_type_name(ast));
             List *init = ast->ast_for_stat->init;
