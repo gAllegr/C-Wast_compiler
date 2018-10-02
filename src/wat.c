@@ -54,16 +54,120 @@ void code_generation(AST *ast, SymTab *symtab)
     // generate final code
     text = strdup(concat(5, "\n", "(module", import, d, text, ")"));
     fprintf(fp, "%s", text);
-
     fclose(fp);
 
+    createAuxFiles();
+}
+
+void createAuxFiles()
+{
     wat2wasm();
+    createHTML();
+    createCSS();
+    createJS();
 }
 
 void wat2wasm()
 {
     char command[] = "wat2wasm ./output_code/code.wat -o ./output_code/code.wasm";
     system(command);
+}
+
+void createHTML()
+{
+    char *head = "\t<meta charset=\"utf-8\">\n\t<title>WebAssembly Testing Page</title>\n\t<script src=\"script.js\"></script>\n\t<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">";
+    char *body = "\t<h1>WebAssembly Testing Page</h1>\n\t<div id=\"output\"></div>\n\t<script>startWasm();</script>";
+    char *html = strdup(concat(9,"\n", "<!doctype html>", "<html>", "<head>", head, "</head>", "<body>", body, "</body>", "</html>"));
+
+    // open file
+    FILE *fhtml = fopen ("./output_code/index.html", "w");
+    if (fhtml==NULL)
+    {
+        printf("Cannot open file\n");
+        exit(1);
+    }
+    fprintf(fhtml, "%s", html);
+    fclose(fhtml);
+}
+
+void createCSS()
+{
+    char *output_div = "#output {\n\tborder-style: solid;\n\tborder-width: 1px;\n\tvisibility: hidden;\n}";
+
+    // open file
+    FILE *fcss = fopen ("./output_code/style.css", "w");
+    if (fcss==NULL)
+    {
+        printf("Cannot open file\n");
+        exit(1);
+    }
+    fprintf(fcss, "%s", output_div);
+    fclose(fcss);
+}
+
+void createJS()
+{
+    char *js_code ="";
+    char *functions[3] = {"","",""};
+    char *memory = "";
+    char *console_import = "";
+    char *memory_import = "";
+    char *import_object = "";
+    char *show_div = "";
+    char *webAssembly = "";
+
+    // create integer printf function
+    if(imports_flag[0] == 1)
+    {
+        functions[0] = "\t// integer printf function to import in WebAssembly code\n\tfunction consoleIntLog(intNumber)\n\t{\n\t\tvar paragraph = document.createElement(\"p\");\n\t\tparagraph.innerHTML = intNumber;\n\t\tdocument.getElementById(\"output\").appendChild(paragraph);\n\t}\n";
+        console_import = strdup(concat(2, "\n", console_import, "\t\t\tint_log: consoleIntLog,"));
+    }
+
+    // create float printf function
+    if(imports_flag[1] == 1)
+    {
+        functions[1] = "\t// float printf function to import in WebAssembly code\n\tfunction consoleFloatLog(floatNumber)\n\t{\n\t\tvar paragraph = document.createElement(\"p\");\n\t\tparagraph.innerHTML = floatNumber;\n\t\tdocument.getElementById(\"output\").appendChild(paragraph);\n\t}\n";
+        console_import = strdup(concat(2, "\n", console_import, "\t\t\tfloat_log: consoleFloatLog,"));
+    }
+
+    // create string printf function
+    if(imports_flag[2] == 1)
+    {
+        functions[2] = "\t// string printf function to import in WebAssembly code\n\tfunction consoleStringLog(offset, length)\n\t{\n\t\tvar bytes = new Uint8Array(memory.buffer, offset, length);\n\t\tvar string = new TextDecoder('utf8').decode(bytes);\n\t\tvar paragraph = document.createElement(\"p\");\n\t\tparagraph.innerHTML = string;\n\t\tdocument.getElementById(\"output\").appendChild(paragraph);\n\t}\n";
+        console_import = strdup(concat(2, "\n", console_import, "\t\t\tstr_log: consoleStringLog,"));
+    }
+
+    // create memory
+    if(imports_flag[3] == 1)
+    {
+        memory = "\t// memory will have one page (64KB)\n\tvar memory = new WebAssembly.Memory({ initial: 1 });\n";
+        memory_import = "\t\tjs: {\n\t\t\tmem: memory\n\t\t}";
+    }
+
+    // create import_object
+    if(console_import != "")
+        console_import = strdup(concat(3, "\n", "\t\tconsole: {", console_import, "\t\t},"));
+
+    import_object = strdup(concat(5, "\n", "\t// define importObject, to be passed to WebAssembly", "\tvar importObject = {", console_import, memory_import, "\t};\n"));
+
+    // show div element
+    show_div = strdup(concat(2, "\n", "\t// show div element", "\tdocument.getElementById(\"output\").style.visibility = 'visible';\n"));
+
+    // instantiate a WebAssembly instance
+    webAssembly = strdup(concat(5, "\n", "\t// instantiate a WebAssembly instance", "\tWebAssembly.instantiateStreaming(fetch('code.wasm'), importObject)", "\t\t.then(obj => {", "\t\t\tobj.instance.exports.main();", "\t\t});"));
+
+    // concat everything to get code
+    js_code = strdup(concat(10, "\n", "function startWasm()", "{", memory, functions[0], functions[1], functions[2], import_object, show_div, webAssembly, "}"));
+
+    // open file
+    FILE *fjs = fopen ("./output_code/script.js", "w");
+    if (fjs==NULL)
+    {
+        printf("Cannot open file\n");
+        exit(1);
+    }
+    fprintf(fjs, "%s", js_code);
+    fclose(fjs);
 }
 
 char *indentation (int n)

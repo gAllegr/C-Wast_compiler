@@ -22,8 +22,14 @@ int for_loop_index;
 
 /* Function prototypes */
 void code_generation(AST *ast, SymTab *symtab);
-void wat2wasm();
 char *indentation (int n);
 char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent);
+
+/* Create auxiliary files */
+void createAuxFiles();
+void wat2wasm();
+void createHTML();
+void createCSS();
+void createJS();
 
 #endif
