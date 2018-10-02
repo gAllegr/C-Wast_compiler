@@ -11,7 +11,8 @@ char* concat(int n_token, char *sep, char *token,...)
 {
 	int i;
 	va_list vl;
-	char concatenated[200] = "", *ret;
+	// concatened could contain max 2^16 characters
+	char concatenated[65536] = "", *ret;
 
 	strcat(concatenated,token);
 	va_start(vl,token);

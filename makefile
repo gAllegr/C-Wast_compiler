@@ -12,7 +12,7 @@ flex ./src/lex.l
 mv lex.yy.c ./bin
 
 # Generate compiler
-gcc ./src/utils.c ./src/list.c ./src/ast.c ./src/symtab.c ./bin/grammar.tab.c ./bin/lex.yy.c -lfl -o ./bin/compiler.out
+gcc ./src/utils.c ./src/list.c ./src/ast.c ./src/symtab.c ./src/wat.c ./bin/grammar.tab.c ./bin/lex.yy.c -lfl -o ./bin/compiler.out
 
 # Save compiler graph as a png image
 #dot ./bin/grammar.dot -Tpng -o ./bin/compiler.png

@@ -29,15 +29,17 @@
                 (i32.const 1)
             )
         )
+        
+        (set_local $i
+            (i32.add
+                (get_local $i)
+                (i32.const 1)
+            )
+        )
 
         (br_if $loop
             (i32.le_s
-                (tee_local $i
-                    (i32.add
-                        (get_local $i)
-                        (i32.const 1)
-                    )
-                )
+                (get_local $i)
                 (get_local $N)
             )
         )

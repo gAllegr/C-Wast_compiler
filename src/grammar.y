@@ -605,7 +605,7 @@ expr: expr ADD expr
         }
     | SUB expr %prec REV
         {
-            $$ = new_AST_Unary_Expr ($1,$2);
+            $$ = new_AST_Unary_Expr (U_REV,$2);
         }
     | increment
 	| expr EQOP expr
@@ -969,13 +969,13 @@ int main (void)
         printf("\n\nNow I'll print the symbol table!\n\n");
         print_symtab(symtab);
 
-        /* code_generation(ast, symtab); */
+        code_generation(ast, symtab);
 
         printf("Now I'll free memory occupied by abstract syntax tree!\n");
         free_ast(ast);
         printf("Memory is free!\n\n");
 
-        fclose(fp);
+        printf("Converted file (code.wat) could be found into main folder\n");
     }
 	else printf("\nWRONG SYNTAX! ç.ç\n");
 
