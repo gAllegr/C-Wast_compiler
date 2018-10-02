@@ -12,12 +12,13 @@ char *imports[4] = {
 /* Flag to know what imports are needed */
 int imports_flag[4] = {0,0,0,0};
 
-void code_generation(AST *ast, SymTab *symtab)
+void code_generation(AST *ast, SymTab *symtab, char *filename)
 {
     int i;
 
     // open file
-    fp = fopen ("./output_code/code.wat", "w");
+    char *path = strdup(concat(3, "", "./output_code/", filename, ".wat"));
+    fp = fopen (path, "w");
     if (fp==NULL)
     {
         printf("Cannot open file\n");
@@ -56,20 +57,20 @@ void code_generation(AST *ast, SymTab *symtab)
     fprintf(fp, "%s", text);
     fclose(fp);
 
-    createAuxFiles();
+    createAuxFiles(filename);
 }
 
-void createAuxFiles()
+void createAuxFiles(char *filename)
 {
-    wat2wasm();
+    wat2wasm(filename);
     createHTML();
     createCSS();
-    createJS();
+    createJS(filename);
 }
 
-void wat2wasm()
+void wat2wasm(char *filename)
 {
-    char command[] = "wat2wasm ./output_code/code.wat -o ./output_code/code.wasm";
+    char *command = strdup(concat(5, "", "wat2wasm ./output_code/", filename, ".wat -o ./output_code/", filename, ".wasm"));
     system(command);
 }
 
@@ -105,7 +106,7 @@ void createCSS()
     fclose(fcss);
 }
 
-void createJS()
+void createJS(char *filename)
 {
     char *js_code ="";
     char *functions[3] = {"","",""};
@@ -154,7 +155,7 @@ void createJS()
     show_div = strdup(concat(2, "\n", "\t// show div element", "\tdocument.getElementById(\"output\").style.visibility = 'visible';\n"));
 
     // instantiate a WebAssembly instance
-    webAssembly = strdup(concat(5, "\n", "\t// instantiate a WebAssembly instance", "\tWebAssembly.instantiateStreaming(fetch('code.wasm'), importObject)", "\t\t.then(obj => {", "\t\t\tobj.instance.exports.main();", "\t\t});"));
+    webAssembly = strdup(concat(7, "", "\t// instantiate a WebAssembly instance\n", "\tWebAssembly.instantiateStreaming(fetch('", filename, ".wasm'), importObject)\n", "\t\t.then(obj => {\n", "\t\t\tobj.instance.exports.main();\n", "\t\t});"));
 
     // concat everything to get code
     js_code = strdup(concat(10, "\n", "function startWasm()", "{", memory, functions[0], functions[1], functions[2], import_object, show_div, webAssembly, "}"));

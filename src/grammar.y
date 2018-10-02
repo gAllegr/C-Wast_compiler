@@ -5,6 +5,7 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <string.h>
+    #include <libgen.h>
 	#include "../src/utils.h"
     #include "../src/ast.h"
     #include "../src/list.h"
@@ -16,6 +17,7 @@
     /* Variable needed for debugging */
 //	int yydebug = 1;
 
+    extern FILE *yyin;
     AST *ast;                       // Abstract Syntax Tree
     SymTab *symtab;                 // Symbol Table
 %}
@@ -953,13 +955,18 @@ void yyerror (const char *s)
 	fprintf(stderr, "Error: %s\nLine: %d\n", s, yylineno);
 }
 
-int main (void)
+int main (int argc, char *argv[])
 {
 	// initialize symbol table
     symtab = init_symtab();
     scope = "GLOBAL";
 
+    yyin = fopen(argv[1],"r");
+    char *filename = strtok(basename(argv[1]),".");
+
 	int result = yyparse();
+    fclose(yyin);
+
 	if(result==0)
     {
         printf("\nCORRECT SYNTAX! \\^.^/ \n");
@@ -969,7 +976,7 @@ int main (void)
         printf("\n\nNow I'll print the symbol table!\n\n");
         print_symtab(symtab);
 
-        code_generation(ast, symtab);
+        code_generation(ast, symtab, filename);
 
         printf("Now I'll free memory occupied by abstract syntax tree!\n");
         free_ast(ast);

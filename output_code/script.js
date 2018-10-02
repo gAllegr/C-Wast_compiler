@@ -30,7 +30,7 @@ function startWasm()
 	document.getElementById("output").style.visibility = 'visible';
 
 	// instantiate a WebAssembly instance
-	WebAssembly.instantiateStreaming(fetch('code.wasm'), importObject)
+	WebAssembly.instantiateStreaming(fetch('basic_conditions.wasm'), importObject)
 		.then(obj => {
 			obj.instance.exports.main();
 		});

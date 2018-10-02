@@ -21,15 +21,15 @@ int data_index;
 int for_loop_index;
 
 /* Function prototypes */
-void code_generation(AST *ast, SymTab *symtab);
+void code_generation(AST *ast, SymTab *symtab, char *filename);
 char *indentation (int n);
 char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent);
 
 /* Create auxiliary files */
-void createAuxFiles();
-void wat2wasm();
+void createAuxFiles(char *filename);
+void wat2wasm(char *filename);
 void createHTML();
 void createCSS();
-void createJS();
+void createJS(char *filename);
 
 #endif
