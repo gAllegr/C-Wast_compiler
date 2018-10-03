@@ -21,4 +21,18 @@ compile:
 
 # Save compiler graph as a png image
 image:
-	dot ./bin/grammar.dot -Tpng -o ./compiler.png
+	@dot ./bin/grammar.dot -Tpng -o ./compiler.png
+
+# Run compiler
+run:
+	@echo "Enter C source code: "; \
+	read SOURCE; \
+	./bin/compiler.out $$SOURCE
+
+# Remove everything from output_code folder
+clean:
+	@rm ./output_code/*
+
+# load final code to server folder
+load:
+	@sudo cp ./output_code/* /var/www/html/

@@ -21,7 +21,7 @@ void code_generation(AST *ast, SymTab *symtab, char *filename)
     fp = fopen (path, "w");
     if (fp==NULL)
     {
-        printf("Cannot open file\n");
+        printf("Cannot open WAT file\n");
         exit(1);
     }
     // initialize variables
@@ -84,7 +84,7 @@ void createHTML()
     FILE *fhtml = fopen ("./output_code/index.html", "w");
     if (fhtml==NULL)
     {
-        printf("Cannot open file\n");
+        printf("Cannot open HTML file\n");
         exit(1);
     }
     fprintf(fhtml, "%s", html);
@@ -99,7 +99,7 @@ void createCSS()
     FILE *fcss = fopen ("./output_code/style.css", "w");
     if (fcss==NULL)
     {
-        printf("Cannot open file\n");
+        printf("Cannot open CSS file\n");
         exit(1);
     }
     fprintf(fcss, "%s", output_div);
@@ -164,7 +164,7 @@ void createJS(char *filename)
     FILE *fjs = fopen ("./output_code/script.js", "w");
     if (fjs==NULL)
     {
-        printf("Cannot open file\n");
+        printf("Cannot open JS file\n");
         exit(1);
     }
     fprintf(fjs, "%s", js_code);
@@ -271,7 +271,7 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
                     if(type == T_FLOAT)
                     {
                         // Not operation for float variables is not defined
-                        printf("Sorry, cannot resolve NOT operation for float in WebAssembly");
+                        printf("Sorry, cannot resolve NOT operation for float in WebAssembly\n");
                         exit(1);
                     }
 
@@ -337,7 +337,7 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
                     if(expr_type == T_FLOAT)
                     {
                         // Not operation for float variables is not defined
-                        printf("Sorry, cannot resolve AND operation for float in WebAssembly");
+                        printf("Sorry, cannot resolve AND operation for float in WebAssembly\n");
                         exit(1);
                     }
                     text = strdup(concat(5, "", "(i32.and ", l_temp, " ", r_temp, ")"));
@@ -346,7 +346,7 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
                     if(expr_type == T_FLOAT)
                     {
                         // Not operation for float variables is not defined
-                        printf("Sorry, cannot resolve OR operation for float in WebAssembly");
+                        printf("Sorry, cannot resolve OR operation for float in WebAssembly\n");
                         exit(1);
                     }
                     text = strdup(concat(5, "", "(i32.or ", l_temp, " ", r_temp, ")"));
@@ -401,6 +401,7 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
             condition = strdup(concat(9, "", indentation(indent+2), "(br_if $", loop_name, "\n", indentation(indent+4), condition, "\n", indentation(indent+2), ")"));
             /* Loop */
             char *loop_body = strdup(convert_code(ast->ast_for_stat->loop, symtab, scope, indent+2));
+            loop_body = strdup(concat(2,"", indentation(indent+2), loop_body));
             /* Put everything together */
             text = strdup(concat(14, "", init, "\n", indentation(indent), "(loop $", loop_name, "\n", loop_body, "\n", incr, "\n", condition, "\n", indentation(indent), ")"));
             for_loop_index++;
@@ -436,7 +437,7 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
                 char temp[60];
                 // get string length (-3 remove both "" and null-terminator)
                 text = ast->ast_builtin_stat->content->ast_constant->sval;
-                int l = strlen(text)-3;
+                int l = strlen(text)-2;
 
                 text = strdup(convert_code(ast->ast_builtin_stat->content, symtab, scope, 0));
                 sprintf(temp, "(call $str_log\n%s%s\n%s(i32.const %d)\n%s)", indentation(indent+2),text,indentation(indent+2), l, indentation(indent));
@@ -472,7 +473,10 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
                         pos = lookup(symtab, var->ast_variable->sym_variable->name, scope, &where);
                         SymTab_Variables *v = get_symtab_var(symtab, scope, pos, where);
 
-                        sprintf(temp, "(call $str_log\n%s(get_%s)\n%s(i32.const %d)\n%s)", indentation(indent+2), text, indentation(indent+2), (v->n)-3, indentation(indent));
+                        if(v->n == -1)      // char
+                            sprintf(temp, "(call $str_log\n%s(get_%s)\n%s(i32.const %d)\n%s)", indentation(indent+2), text, indentation(indent+2), 1, indentation(indent));
+                        else                // string
+                            sprintf(temp, "(call $str_log\n%s(get_%s)\n%s(i32.const %d)\n%s)", indentation(indent+2), text, indentation(indent+2), (v->n)-1, indentation(indent));
                         text = temp;
                     }
                 }
@@ -488,8 +492,11 @@ char *convert_code (AST *ast, SymTab *symtab, char *scope, int indent)
                 for(int i=0; i<list_length(l);i++)
                 {
                     a = list_get(l, i);
-                    text = strdup(concat(2,"",text,a->ast_constant->sval));
+                    char *letter = strdup(a->ast_constant->sval);
+                    letter = strtok(letter,"'");
+                    text = strdup(concat(2,"",text,letter));
                 }
+                text = strdup(concat(3, "", "\"", text, "\""));
                 a = new_AST_Const(T_CHAR, text);
                 text = strdup(convert_code(a, symtab, scope, 0));
             }

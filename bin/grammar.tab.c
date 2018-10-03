@@ -2728,7 +2728,19 @@ int main (int argc, char *argv[])
     scope = "GLOBAL";
 
     yyin = fopen(argv[1],"r");
+    if (yyin==NULL)
+    {
+        printf("Cannot open C file\n");
+        exit(1);
+    }
+
     char *filename = strtok(basename(argv[1]),".");
+    char *extension = strtok(NULL,".");
+    if(strcmp(extension,"c")!=0)
+    {
+        printf("Input file must be a C program\n");
+        exit(1);
+    }
 
 	int result = yyparse();
     fclose(yyin);
@@ -2748,7 +2760,7 @@ int main (int argc, char *argv[])
         free_ast(ast);
         printf("Memory is free!\n\n");
 
-        printf("Converted file (code.wat) could be found into main folder\n");
+        printf("Converted file (%s.wat) could be found into output_code folder\n", filename);
     }
 	else printf("\nWRONG SYNTAX! ç.ç\n");
 
