@@ -16,6 +16,8 @@ Although disabling yywrap is certainly the best option, it may also be possible 
 
 	extern void yyerror (const char *s);
 	static inline void value_token() { yylval.sval = strdup(yytext); }
+
+	FILE *yyin;
 %}
 
 %option yylineno

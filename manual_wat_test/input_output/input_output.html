@@ -1,0 +1,71 @@
+<!doctype html>
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Simple add example</title>
+</head>
+
+<body>
+    <div id="numScanfForm"></div>
+
+
+    <script>
+        var memory = new WebAssembly.Memory({ initial: 1 });
+
+        function consoleLogString(offset, length) 
+        {
+            var bytes = new Uint8Array(memory.buffer, offset, length);
+            var string = new TextDecoder('utf8').decode(bytes);
+            console.log(string);
+        };
+
+        value = new WebAssembly.Global({value:'i32', mutable:true}, 50);
+        function createForm()
+        {
+            var input = document.createElement("input");
+            input.setAttribute('type',"number");
+            input.setAttribute('name',"number");
+            input.setAttribute('onchange',"getNumber(this.value)");            
+
+            document.getElementById("numScanfForm").appendChild(input);
+        }
+
+        function getNumber(val)
+        {
+            value.value = val;
+            var form = document.getElementById("numScanfForm");
+            form.parentNode.removeChild(form);
+        };
+
+        function scanfFunction()
+        {
+            createForm();
+            return value.value;
+        }
+
+        var importObject = {
+            console: {
+                str_log: consoleLogString,
+                log: function(arg) { console.log(arg); },
+            },
+            env : {
+                scanf: scanfFunction
+            },
+            js: {
+                mem: memory,
+                value
+
+            }
+        };
+
+        WebAssembly.instantiateStreaming(fetch('input_output.wasm'), importObject)
+            .then(obj => {
+                obj.instance.exports.main();
+                obj.instance.exports.setValue();
+            });
+    </script>
+</body>
+
+</html>

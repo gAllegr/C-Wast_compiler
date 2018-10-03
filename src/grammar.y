@@ -5,16 +5,19 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <string.h>
+    #include <libgen.h>
 	#include "../src/utils.h"
     #include "../src/ast.h"
     #include "../src/list.h"
     #include "../src/symtab.h"
+    #include "../src/wat.h"
 
 	int yylex();
     void yyerror (const char *s);
     /* Variable needed for debugging */
 //	int yydebug = 1;
 
+    extern FILE *yyin;
     AST *ast;                       // Abstract Syntax Tree
     SymTab *symtab;                 // Symbol Table
 %}
@@ -604,7 +607,7 @@ expr: expr ADD expr
         }
     | SUB expr %prec REV
         {
-            $$ = new_AST_Unary_Expr ($1,$2);
+            $$ = new_AST_Unary_Expr (U_REV,$2);
         }
     | increment
 	| expr EQOP expr
@@ -952,13 +955,30 @@ void yyerror (const char *s)
 	fprintf(stderr, "Error: %s\nLine: %d\n", s, yylineno);
 }
 
-int main (void)
+int main (int argc, char *argv[])
 {
 	// initialize symbol table
     symtab = init_symtab();
     scope = "GLOBAL";
 
+    yyin = fopen(argv[1],"r");
+    if (yyin==NULL)
+    {
+        printf("Cannot open C file\n");
+        exit(1);
+    }
+
+    char *filename = strtok(basename(argv[1]),".");
+    char *extension = strtok(NULL,".");
+    if(strcmp(extension,"c")!=0)
+    {
+        printf("Input file must be a C program\n");
+        exit(1);
+    }
+
 	int result = yyparse();
+    fclose(yyin);
+
 	if(result==0)
     {
         printf("\nCORRECT SYNTAX! \\^.^/ \n");
@@ -968,11 +988,13 @@ int main (void)
         printf("\n\nNow I'll print the symbol table!\n\n");
         print_symtab(symtab);
 
-        /* other stuff (code_gen) */
+        code_generation(ast, symtab, filename);
 
         printf("Now I'll free memory occupied by abstract syntax tree!\n");
         free_ast(ast);
         printf("Memory is free!\n\n");
+
+        printf("Converted file (%s.wat) could be found into output_code folder\n", filename);
     }
 	else printf("\nWRONG SYNTAX! ç.ç\n");
 

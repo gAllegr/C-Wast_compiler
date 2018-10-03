@@ -11,7 +11,8 @@ char* concat(int n_token, char *sep, char *token,...)
 {
 	int i;
 	va_list vl;
-	char concatenated[200] = "", *ret;
+	// concatened could contain max 2^16 characters
+	char concatenated[65536] = "", *ret;
 
 	strcat(concatenated,token);
 	va_start(vl,token);
@@ -188,6 +189,13 @@ ValType evaluate_expression_type(AST *ast, SymTab *symtab, char *scope)
 			if(ast->ast_variable->sym_variable->type != T_STRUCT)
 			{
 				// NOT STRUCT VARIABLE
+				if(ast->ast_variable->sym_variable->type == T_CHAR)
+				{
+					sprintf(error,"Expression variable %s is a char",ast->ast_variable->sym_variable->name);
+					yyerror(error);
+					exit(1); 
+				}
+
 				// check if variable has been declared
 				pos = lookup(symtab, ast->ast_variable->sym_variable->name, scope, &where);
 
@@ -258,8 +266,16 @@ ValType evaluate_expression_type(AST *ast, SymTab *symtab, char *scope)
 					yyerror(error);
 					exit(1);
 				}
+
 				// retrieve element from variable
 				e = list_get(a->s_info->struct_element->items[0],e_pos);
+
+				if(e->type == T_CHAR)
+				{
+					sprintf(error,"Expression variable %s is a char",e->name);
+					yyerror(error);
+					exit(1); 
+				}
 
 				l_type = e->type;
 			}	
