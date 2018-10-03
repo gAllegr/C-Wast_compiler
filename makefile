@@ -7,6 +7,7 @@ all: bison flex compile
 # -v verbose mode (produces a .output file)
 # --graph[=FILE] also output a graph of the automaton
 bison:
+	mkdir -p ./bin
 	bison --report=all --debug -v --graph=grammar.dot -d ./src/grammar.y
 	mv grammar.tab.* grammar.dot grammar.output ./bin/
 
@@ -25,7 +26,8 @@ image:
 
 # Run compiler
 run:
-	@echo "Enter C source code: "; \
+	@mkdir -p ./output_code; \
+	echo "Enter C source code: "; \
 	read SOURCE; \
 	./bin/compiler.out $$SOURCE
 
