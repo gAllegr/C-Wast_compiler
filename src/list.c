@@ -40,6 +40,7 @@ void *list_get(List *list, int index) {
     return list->items[index];
 }
 
+/* Merge elements of two different lists */
 List *list_merge(List *first_list, List *second_list) {
     if(second_list != NULL)
     {
