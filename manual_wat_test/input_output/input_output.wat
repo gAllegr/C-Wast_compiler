@@ -1,37 +1,23 @@
 (module
     (import "console" "str_log" (func $str_log (param i32) (param i32)))
-    (import "console" "log" (func $log (param i32)))
-;;    (import "console" "scanf" (func $scanf))
+    (import "console" "int_log" (func $log (param i32)))
     (import "js" "mem" (memory 1))
-    (data (i32.const 0) "Insert the value of the a variable: ")
-    (data (i32.const 36) "Insert the value of 'b' and 'c' variables: ")
-    (global $v (import "js" "value") (mut i32))
-    (global $a (mut i32) (i32.const 0))
-    (global $b (mut i32) (i32.const 0))
-    (global $c (mut i32) (i32.const 0))
+    (data (i32.const 0) "abc")
+    (global $n (import "js" "glob_number") (mut i32))
+    (global $t (import "js" "glob_text") (mut i32))
+    (global $l (import "js" "text_length") (mut i32))
     (func (export "main")
-        (call $str_log
-            (i32.const 0)
-            (i32.const 36)
+    (call $log (i32.const 5))
+        ;; print out number
+        (call $log
+            (get_global $n)
         )
-
+    (call $log (i32.const 15))
+        ;; print out string
         (call $str_log
-            (i32.const 0)
-            (i32.const 37)
+            (get_global $t)
+            (get_global $l)
         )
-
-        (call $str_log
-            (i32.const 36)
-            (i32.const 44)
-        )
-
-        ;;(call $scanf)
-
-;;        (call $log
-  ;;          (get_global $v)
-    ;;    )
+    (call $log (i32.const 25))
     )
-
-
-
 )

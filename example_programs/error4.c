@@ -2,9 +2,9 @@
 
 int main (void)
 {
-    float a = 2.5, b = 4.5;
+    int a = 2, b = 4;
 
-    if ( (a>0.5) && (b>a) ) printf("Something");
+    if ( (a>0) && (b>a) ) printf("Something");
 
     return 0;
 }
